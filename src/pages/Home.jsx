@@ -1,111 +1,512 @@
-import { useState } from 'react';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import ProductCard from '../components/ProductCard';
-import CategoryCard from '../components/CategoryCard';
+import { useState, useEffect, useRef } from 'react';
+import '../index.css';
+import { db } from '../firebase/config';
+import { collection, getDocs } from 'firebase/firestore';
 
-const featuredProducts = [
-  { id: '1', title: 'Esports Gaming Logo', type: 'gaming', price: '250', image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80', badge: 'GAMING DESIGNS' },
-  { id: '2', title: 'Madr Right Character', type: 'post', price: '300', image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&q=80' },
-  { id: '3', title: 'Neon Overlays', type: 'gaming', price: '150', image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80', isFree: true },
-];
+function Home() {
+  const [scrolled, setScrolled] = useState(false);
+  const [filter, setFilter] = useState('all');
+  const [notif, setNotif] = useState({ show: false, msg: '' });
+  
+  const cursorRef = useRef(null);
+  const ringRef = useRef(null);
+  const revealRefs = useRef([]);
+  let notifTimeout = useRef(null);
 
-const categories = [
-  { id: 'gaming-thumb', title: 'Gaming Thumbnails', type: 'gaming', color: 'purple', icon: 'image' },
-  { id: 'gaming-logo', title: 'Gaming Logos', type: 'gaming', color: 'primary', icon: 'gamepad' },
-  { id: 'gaming-post', title: 'Gaming Posts', type: 'gaming', color: 'accent', icon: 'layout' },
-  { id: 'normal-thumb', title: 'Normal Thumbnails', type: 'normal', color: 'purple', icon: 'image' },
-  { id: 'normal-logo', title: 'Normal Logos', type: 'normal', color: 'accent', icon: 'pen' },
-  { id: 'normal-post', title: 'Normal Posts', type: 'normal', color: 'purple', icon: 'layout' },
-];
+  const [portfolioItems, setPortfolioItems] = useState([]);
+  const [loadingPortfolio, setLoadingPortfolio] = useState(true);
 
-const Home = () => {
+  useEffect(() => {
+    getDocs(collection(db, 'portfolio'))
+      .then(snap => {
+        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setPortfolioItems(items);
+        setLoadingPortfolio(false);
+      })
+      .catch(e => {
+        console.error('Error fetching portfolio:', e);
+        setLoadingPortfolio(false);
+      });
+  }, []);
+
+  const services = [
+    {icon:'🎮',title:'Gaming Thumbnails',desc:'High-impact YouTube & stream thumbnails engineered to stop the scroll and dominate search results.',price:'',color:'var(--cyan)'},
+    {icon:'⚡',title:'Gaming Logos',desc:'Fierce esports logos and team branding that commands respect in any competitive arena.',price:'',color:'var(--pink)'},
+    {icon:'📡',title:'Gaming Social Posts',desc:'Scroll-stopping social content designed to grow your gaming brand across all platforms.',price:'',color:'var(--purple)'},
+    {icon:'🖼️',title:'Normal Thumbnails',desc:'Clean, professional thumbnails for lifestyle, business, and content creators who demand quality.',price:'',color:'#4cc9f0'},
+    {icon:'✦',title:'Normal Logos',desc:'Modern, memorable logos for businesses, personal brands, and creative projects of all kinds.',price:'',color:'#f77f00'},
+    {icon:'📸',title:'Social Media Posts',desc:'Eye-catching posts for Instagram, Twitter, and TikTok that elevate your brand presence.',price:'',color:'#06d6a0'},
+  ];
+
+  // Mouse move for custom cursor
+  useEffect(() => {
+    let mx=0, my=0, rx=0, ry=0;
+    
+    const handleMouseMove = (e) => {
+      mx = e.clientX; 
+      my = e.clientY;
+      if (cursorRef.current) {
+        cursorRef.current.style.left = mx + 'px';
+        cursorRef.current.style.top = my + 'px';
+      }
+    };
+    
+    let animId;
+    const animRing = () => {
+      rx += (mx - rx) * 0.12; 
+      ry += (my - ry) * 0.12;
+      if (ringRef.current) {
+        ringRef.current.style.left = rx + 'px';
+        ringRef.current.style.top = ry + 'px';
+      }
+      animId = requestAnimationFrame(animRing);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    animRing();
+
+    // Hover effect for interactive elements
+    const interactiveElements = document.querySelectorAll('button, a, .mini-card, .p-card, .s-card, .pr-card');
+    const handleMouseEnter = () => {
+      if(cursorRef.current) { cursorRef.current.style.width='6px'; cursorRef.current.style.height='6px'; }
+      if(ringRef.current) { ringRef.current.style.width='56px'; ringRef.current.style.height='56px'; ringRef.current.style.opacity='0.8'; }
+    };
+    const handleMouseLeave = () => {
+      if(cursorRef.current) { cursorRef.current.style.width='12px'; cursorRef.current.style.height='12px'; }
+      if(ringRef.current) { ringRef.current.style.width='36px'; ringRef.current.style.height='36px'; ringRef.current.style.opacity='0.5'; }
+    };
+    
+    interactiveElements.forEach(el => {
+      el.addEventListener('mouseenter', handleMouseEnter);
+      el.addEventListener('mouseleave', handleMouseLeave);
+    });
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animId);
+      interactiveElements.forEach(el => {
+        el.removeEventListener('mouseenter', handleMouseEnter);
+        el.removeEventListener('mouseleave', handleMouseLeave);
+      });
+    };
+  }); // Run when elements might change
+
+  // Navbar scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 60);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Intersection Observer for reveals
+  useEffect(() => {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if(e.isIntersecting) {
+          e.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    revealRefs.current.forEach(el => {
+      if (el && !el.classList.contains('visible')) {
+        obs.observe(el);
+      }
+    });
+    
+    return () => obs.disconnect();
+  }, [filter, portfolioItems]); // Re-run when filter or data changes
+
+  const triggerNotify = (msg) => {
+    setNotif({ show: true, msg });
+    if(notifTimeout.current) clearTimeout(notifTimeout.current);
+    notifTimeout.current = setTimeout(() => {
+      setNotif(prev => ({ ...prev, show: false }));
+    }, 3500);
+  };
+
+  const filteredPortfolio = filter === 'all' ? portfolioItems : portfolioItems.filter(i => i.cat === filter);
+
+  const addToRefs = (el) => {
+    if (el && !revealRefs.current.includes(el)) {
+      revealRefs.current.push(el);
+    }
+  };
+
   return (
-    <div className="pt-20 pb-16">
-      {/* Hero Section */}
-      <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="absolute inset-0 z-0 overflow-hidden rounded-3xl opacity-20">
-            <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-primary rounded-full mix-blend-screen filter blur-[100px] opacity-70"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent rounded-full mix-blend-screen filter blur-[100px] opacity-70"></div>
-        </div>
+    <>
+      <div id="cursor" ref={cursorRef}></div>
+      <div id="cursor-ring" ref={ringRef}></div>
+      <div id="notif" style={{ display: notif.show ? 'flex' : 'none' }}>
+        ✦ <span id="notif-text">{notif.msg}</span>
+      </div>
 
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="text-5xl md:text-7xl font-display font-extrabold text-white mb-6 leading-tight">
-              LEVEL UP YOUR <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">DESIGNS</span>
+      {/* NAV */}
+      <nav id="navbar" className={scrolled ? 'scrolled' : ''}>
+        <div className="logo">PIXEL VIBE</div>
+        <div className="nav-links">
+          <a href="#hero">Home</a>
+          <a href="#portfolio">Portfolio</a>
+          <a href="#services">Services</a>
+          <a href="#about">About</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#contact">Contact</a>
+          <a href="#contact" className="nav-cta">Hire Me</a>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section id="hero">
+        <div className="hero-grid"></div>
+        <div className="hero-orb orb1"></div>
+        <div className="hero-orb orb2"></div>
+        <div className="hero-orb orb3"></div>
+        <div className="hero-content">
+          <div className="hero-left">
+            <div className="hero-badge">
+              <span className="badge-dot"></span>
+              <span className="badge-text" style={{ cursor: 'none' }}>Available for Work</span>
+            </div>
+            <h1 className="hero-title">
+              <span className="line1">LEVEL UP</span>
+              <span className="line2">YOUR DESIGNS</span>
+              <span className="line3">PREMIUM CREATIVE STUDIO</span>
             </h1>
-            <p className="text-lg text-gray-300 mb-8 max-w-xl mx-auto md:mx-0">
-              Premium Gaming & Creative Designs for Sale. Access high-quality templates, logos, thumbnails, and posts. Free options available!
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
-              <button className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2 text-lg px-8 py-3">
-                EXPLORE DESIGNS
-              </button>
-              <button className="btn-accent w-full sm:w-auto flex items-center justify-center gap-2 text-lg px-8 py-3">
-                HIRE ME
-              </button>
+            <p className="hero-sub">Premium gaming & creative designs crafted to dominate. Thumbnails, logos, overlays, social posts — built to convert and built to last.</p>
+            <div className="hero-btns">
+              <button className="btn-primary" onClick={() => document.getElementById('portfolio').scrollIntoView({behavior:'smooth'})}>View My Work →</button>
+              <button className="btn-ghost" onClick={() => document.getElementById('contact').scrollIntoView({behavior:'smooth'})}>Hire Me</button>
             </div>
           </div>
-          
-          <div className="flex-1 relative hidden md:block">
-            <div className="relative w-full aspect-square max-w-md mx-auto">
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-accent/20 rounded-3xl transform rotate-3 scale-105 border border-white/10 backdrop-blur-sm"></div>
-              <img 
-                src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80" 
-                alt="Featured Design" 
-                className="absolute inset-0 w-full h-full object-cover rounded-3xl shadow-2xl transform -rotate-3 transition-transform duration-500 hover:rotate-0"
-              />
-              <div className="absolute -bottom-6 -left-6 bg-dark-800/90 backdrop-blur-md p-4 rounded-xl border border-gray-700 shadow-xl">
-                <span className="block text-primary font-bold text-xl">ESPORTS</span>
-                <span className="text-xs text-gray-400">PREMIUM BRANDING</span>
+          <div className="hero-right">
+            <div className="mini-card mc1">
+              <span className="mc-icon">🎮</span>
+              <div className="mc-label">Gaming Thumbs</div>
+              <div className="mc-sub" style={{color: 'var(--cyan)'}}>24 Designs</div>
+            </div>
+            <div className="mini-card mc2">
+              <span className="mc-icon">⚡</span>
+              <div className="mc-label">Gaming Logos</div>
+              <div className="mc-sub" style={{color: 'var(--pink)'}}>18 Designs</div>
+            </div>
+            <div className="mini-card mc3">
+              <span className="mc-icon">📡</span>
+              <div className="mc-label">Social Posts</div>
+              <div className="mc-sub" style={{color: 'var(--purple)'}}>32 Designs</div>
+            </div>
+            <div className="mini-card mc4">
+              <span className="mc-icon">✦</span>
+              <div className="mc-label">Normal Logos</div>
+              <div className="mc-sub" style={{color: 'var(--blue)'}}>15 Designs</div>
+            </div>
+          </div>
+        </div>
+        <div className="scroll-hint">
+          <div className="scroll-line"></div>
+          <span className="scroll-text">Scroll</span>
+        </div>
+      </section>
+
+      {/* PORTFOLIO */}
+      <section id="portfolio">
+        <div className="sec-header reveal" ref={addToRefs}>
+          <span className="sec-tag" style={{color: 'var(--cyan)'}}>My Work</span>
+          <div className="sec-title">Design <span className="glow-cyan">Portfolio</span></div>
+        </div>
+        <div className="filter-bar reveal" ref={addToRefs}>
+          <button 
+            className={`filter-btn ${filter === 'all' ? 'on' : 'off'}`} 
+            style={filter === 'all' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}}
+            onClick={() => setFilter('all')}
+          >All</button>
+          <button className={`filter-btn ${filter === 'gaming-thumb' ? 'on' : 'off'}`} style={filter === 'gaming-thumb' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('gaming-thumb')}>Gaming Thumbs</button>
+          <button className={`filter-btn ${filter === 'gaming-logo' ? 'on' : 'off'}`} style={filter === 'gaming-logo' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('gaming-logo')}>Gaming Logos</button>
+          <button className={`filter-btn ${filter === 'gaming-post' ? 'on' : 'off'}`} style={filter === 'gaming-post' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('gaming-post')}>Gaming Posts</button>
+          <button className={`filter-btn ${filter === 'normal-thumb' ? 'on' : 'off'}`} style={filter === 'normal-thumb' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('normal-thumb')}>Normal Thumbs</button>
+          <button className={`filter-btn ${filter === 'normal-logo' ? 'on' : 'off'}`} style={filter === 'normal-logo' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('normal-logo')}>Normal Logos</button>
+          <button className={`filter-btn ${filter === 'normal-post' ? 'on' : 'off'}`} style={filter === 'normal-post' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('normal-post')}>Normal Posts</button>
+        </div>
+        
+        <div className="portfolio-grid" id="portfolioGrid">
+          {loadingPortfolio ? (
+            <div className="col-span-full py-12 text-center text-gray-500 font-['Rajdhani'] uppercase tracking-widest animate-pulse">Loading amazing designs...</div>
+          ) : filteredPortfolio.length === 0 ? (
+            <div className="col-span-full py-12 text-center text-gray-500 font-['Rajdhani'] uppercase tracking-widest">No items found. Add some from the Admin Panel!</div>
+          ) : (
+            filteredPortfolio.map(item => (
+              <div key={item.id} className="p-card reveal" ref={addToRefs} onClick={() => triggerNotify(`Viewing: ${item.title}`)}>
+                <div className="p-card-bg" style={{ position:'absolute', inset:0, background: item.bg || `linear-gradient(135deg, ${item.color}20, #0a0a1f)` }}></div>
+                <svg className="p-card-shapes" viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style={{ color: item.color }}>
+                  <polygon points="150,20 260,80 230,200 70,200 40,80" fill="none" stroke="currentColor" strokeWidth="1"/>
+                  <circle cx="150" cy="120" r="40" fill="none" stroke="currentColor" strokeWidth="0.8"/>
+                  <line x1="40" y1="80" x2="260" y2="80" stroke="currentColor" strokeWidth="0.5"/>
+                  <circle cx="150" cy="120" r="8" fill="currentColor" opacity="0.4"/>
+                </svg>
+                <div className="p-card-overlay"></div>
+                <div className="p-card-info">
+                  <span className="p-tag" style={{ color: item.color, borderColor: `${item.color}40` }}>{item.sub}</span>
+                  <div className="p-title">{item.title}</div>
+                </div>
+                <div className="p-action" style={{ color: item.color }}>↗</div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* SERVICES */}
+      <section id="services">
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div className="sec-header reveal" ref={addToRefs}>
+            <span className="sec-tag" style={{ color: 'var(--purple)' }}>What I Offer</span>
+            <div className="sec-title">My <span className="glow-purple">Services</span></div>
+          </div>
+          <div className="services-grid" id="servicesGrid">
+            {services.map((s, i) => (
+              <div 
+                key={i} 
+                className="s-card reveal" 
+                ref={addToRefs}
+                style={{ transitionDelay: `${i * 0.08}s` }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor=`${s.color}40`; e.currentTarget.style.boxShadow=`0 24px 60px ${s.color}15`; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor='rgba(255,255,255,0.06)'; e.currentTarget.style.boxShadow='none'; }}
+              >
+                <span className="s-icon">{s.icon}</span>
+                <div className="s-title">{s.title}</div>
+                <div className="s-desc">{s.desc}</div>
+                <div className="s-footer">
+                  <span className="s-price" style={{ color: s.color }}>{s.price}</span>
+                  <button className="s-btn" style={{ background: s.color }} onClick={() => triggerNotify(`${s.title} order initiated!`)}>Order Now</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ABOUT */}
+      <section id="about">
+        <div className="about-inner">
+          <div className="about-visual reveal-left" ref={addToRefs}>
+            <div className="about-img-frame">
+              <span className="avatar-icon">👾</span>
+              <div style={{ position:'absolute', inset:0, background: 'linear-gradient(to top, rgba(0,245,212,0.08), transparent)' }}></div>
+            </div>
+            <div className="about-glow-badge">
+              <div className="badge-role">Graphic Designer</div>
+              <div className="badge-spec">Gaming & Creative Specialist</div>
+            </div>
+            <div className="about-stats-floating">
+              <div className="stat-num">200+</div>
+              <div className="stat-label">Projects</div>
+            </div>
+          </div>
+          <div className="about-text reveal-right" ref={addToRefs}>
+            <span className="sec-tag" style={{ color: 'var(--cyan)', textAlign: 'left', display: 'block' }}>About Me</span>
+            <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900, fontSize: 'clamp(1.8rem, 2.5vw, 2.8rem)', color: '#fff', lineHeight: 1.15, marginBottom: '1.5rem' }}>
+              Turning Ideas Into<br/><span className="glow-cyan">Visual Power</span>
+            </h2>
+            <p>I'm a passionate graphic designer specializing in gaming and creative design. I create premium visuals that make content stand out — from intense gaming thumbnails that drive clicks to clean brand logos that leave a lasting impression.</p>
+            <p>Every pixel is intentional. Every design is crafted with purpose, precision, and a deep understanding of what captures attention in today's visual landscape.</p>
+            <div className="about-skills">
+              <span className="skill-pill" style={{ background: 'rgba(0,245,212,0.08)', borderColor: 'rgba(0,245,212,0.3)', color: 'var(--cyan)' }}>Adobe Photoshop</span>
+              <span className="skill-pill" style={{ background: 'rgba(247,37,133,0.08)', borderColor: 'rgba(247,37,133,0.3)', color: 'var(--pink)' }}>Illustrator</span>
+              <span className="skill-pill" style={{ background: 'rgba(114,9,183,0.08)', borderColor: 'rgba(114,9,183,0.3)', color: '#a855f7' }}>After Effects</span>
+              <span className="skill-pill" style={{ background: 'rgba(67,97,238,0.08)', borderColor: 'rgba(67,97,238,0.3)', color: 'var(--blue)' }}>Figma</span>
+              <span className="skill-pill" style={{ background: 'rgba(255,165,0,0.08)', borderColor: 'rgba(255,165,0,0.3)', color: '#ffa500' }}>Canva Pro</span>
+              <span className="skill-pill" style={{ background: 'rgba(0,200,100,0.08)', borderColor: 'rgba(0,200,100,0.3)', color: '#00c864' }}>Blender</span>
+            </div>
+            <div className="stats-row">
+              <div className="stat-box"><div className="num" style={{ color: 'var(--cyan)' }}>200+</div><div className="lbl">Projects</div></div>
+              <div className="stat-box"><div className="num" style={{ color: 'var(--pink)' }}>50+</div><div className="lbl">Clients</div></div>
+              <div className="stat-box"><div className="num" style={{ color: 'var(--purple)' }}>3+</div><div className="lbl">Years Exp</div></div>
+              <div className="stat-box"><div className="num" style={{ color: 'var(--blue)' }}>100%</div><div className="lbl">Satisfaction</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing">
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div className="sec-header reveal" ref={addToRefs}>
+            <span className="sec-tag" style={{ color: 'var(--pink)' }}>Investment</span>
+            <div className="sec-title">Transparent <span className="glow-pink">Pricing</span></div>
+          </div>
+          <div className="pricing-grid reveal" ref={addToRefs}>
+            <div className="pr-card">
+              <div className="pr-name">Starter</div>
+              <div className="pr-price"></div>
+              <div className="pr-period">per design</div>
+              <ul className="pr-features">
+                <li className="yes">1 Design Variation</li>
+                <li className="yes">HD Resolution (1080p)</li>
+                <li className="yes">Source File Included</li>
+                <li className="yes">3-day Delivery</li>
+                <li className="no">Unlimited Revisions</li>
+                <li className="no">Priority Support</li>
+              </ul>
+              <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={() => triggerNotify('Starter plan selected! Redirecting to contact...')}>Get Started</button>
+            </div>
+            <div className="pr-card featured">
+              <div className="pr-badge">Most Popular</div>
+              <div className="pr-name">Pro</div>
+              <div className="pr-price"></div>
+              <div className="pr-period">per project</div>
+              <ul className="pr-features">
+                <li className="yes">3 Design Variations</li>
+                <li className="yes">4K Resolution</li>
+                <li className="yes">All Source Files</li>
+                <li className="yes">1-day Delivery</li>
+                <li className="yes">Unlimited Revisions</li>
+                <li className="no">Priority Support</li>
+              </ul>
+              <button className="btn-primary" style={{ width: '100%' }} onClick={() => triggerNotify('Pro plan selected! Redirecting to contact...')}>Get Started</button>
+            </div>
+            <div className="pr-card">
+              <div className="pr-name">Elite</div>
+              <div className="pr-price"></div>
+              <div className="pr-period">full package</div>
+              <ul className="pr-features">
+                <li className="yes">Unlimited Variations</li>
+                <li className="yes">4K + Vector</li>
+                <li className="yes">Complete Brand Kit</li>
+                <li className="yes">Same-day Rush</li>
+                <li className="yes">Unlimited Revisions</li>
+                <li className="yes">Priority Support 24/7</li>
+              </ul>
+              <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={() => triggerNotify('Elite plan selected! Redirecting to contact...')}>Get Started</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CONTACT */}
+      <section id="contact">
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div className="sec-header reveal" ref={addToRefs}>
+            <span className="sec-tag" style={{ color: 'var(--blue)' }}>Get In Touch</span>
+            <div className="sec-title">Start a <span className="glow-cyan">Project</span></div>
+          </div>
+          <div className="contact-inner">
+            <div className="contact-info reveal-left" ref={addToRefs}>
+              <h3>Let's Create Something Epic</h3>
+              <p>Have a project in mind? I'd love to hear about it. Drop me a message and I'll get back to you within 24 hours.</p>
+              <div className="contact-item">
+                <div className="c-icon" style={{ background: 'rgba(0,245,212,0.1)', color: 'var(--cyan)' }}>📧</div>
+                <div>
+                  <div className="c-label">Email</div>
+                  <div className="c-val">hello@pixelvibe.design</div>
+                </div>
+              </div>
+              <a href="https://wa.me/94753951531" target="_blank" rel="noreferrer" className="contact-item" style={{textDecoration:'none', transition:'transform 0.3s'}}>
+                <div className="c-icon wa-highlight" style={{ background: 'rgba(37,211,102,0.15)', color: '#25d366' }}>
+                  <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 448 512" height="22px" width="22px" xmlns="http://www.w3.org/2000/svg"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path></svg>
+                </div>
+                <div>
+                  <div className="c-label">WhatsApp</div>
+                  <div className="c-val">+94 75 395 1531</div>
+                </div>
+              </a>
+              <div className="contact-item">
+                <div className="c-icon" style={{ background: 'rgba(114,9,183,0.1)', color: 'var(--purple)' }}>⏱</div>
+                <div>
+                  <div className="c-label">Response Time</div>
+                  <div className="c-val">Within 24 hours</div>
+                </div>
+              </div>
+              <div className="contact-item">
+                <div className="c-icon" style={{ background: 'rgba(67,97,238,0.1)', color: 'var(--blue)' }}>📍</div>
+                <div>
+                  <div className="c-label">Timezone</div>
+                  <div className="c-val">Available Worldwide</div>
+                </div>
               </div>
             </div>
+            <div className="contact-form reveal-right" ref={addToRefs}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Your Name</label>
+                  <input type="text" placeholder="John Doe"/>
+                </div>
+                <div className="form-group">
+                  <label>Email Address</label>
+                  <input type="email" placeholder="john@email.com"/>
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Service Needed</label>
+                <select>
+                  <option>Gaming Thumbnail</option>
+                  <option>Gaming Logo</option>
+                  <option>Gaming Social Post</option>
+                  <option>Normal Thumbnail</option>
+                  <option>Normal Logo</option>
+                  <option>Normal Social Post</option>
+                  <option>Full Brand Package</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Budget Range</label>
+                <select>
+                  <option>Basic</option>
+                  <option>Standard</option>
+                  <option>Premium</option>
+                  <option>Enterprise</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Project Description</label>
+                <textarea placeholder="Describe your project, style preferences, references..."></textarea>
+              </div>
+              <button className="submit-btn" onClick={() => triggerNotify('Message sent! I will get back to you within 24 hours. ✓')}>Send Message →</button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Designs Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-display font-bold text-white relative inline-block">
-            Featured Designs
-            <div className="absolute -bottom-2 left-0 w-1/2 h-1 bg-primary rounded-full"></div>
-          </h2>
-          <div className="hidden sm:flex items-center gap-2">
-            <button className="p-2 rounded-full bg-dark-800 border border-gray-700 hover:bg-gray-700 transition-colors">
-              <ChevronLeft size={20} />
-            </button>
-            <button className="p-2 rounded-full bg-dark-800 border border-gray-700 hover:bg-gray-700 transition-colors">
-              <ChevronRight size={20} />
-            </button>
+      {/* FOOTER */}
+      <footer>
+        <div className="footer-inner">
+          <div className="footer-brand">
+            <span className="logo">PIXEL VIBE</span>
+            <p>Premium gaming & creative design studio. Building visuals that dominate the digital space.</p>
+            <div className="socials" style={{ marginTop: '1.5rem' }}>
+              <a className="social-btn" href="#">𝕏</a>
+              <a className="social-btn" href="#">in</a>
+              <a className="social-btn" href="#">▶</a>
+              <a className="social-btn" href="#">◉</a>
+            </div>
+          </div>
+          <div className="footer-col">
+            <h4>Work</h4>
+            <a href="#portfolio">Portfolio</a>
+            <a href="#services">Services</a>
+            <a href="#pricing">Pricing</a>
+          </div>
+          <div className="footer-col">
+            <h4>Categories</h4>
+            <a href="#">Gaming Thumbnails</a>
+            <a href="#">Gaming Logos</a>
+            <a href="#">Social Posts</a>
+            <a href="#">Normal Logos</a>
+          </div>
+          <div className="footer-col">
+            <h4>Contact</h4>
+            <a href="#">hello@pixelvibe.design</a>
+            <a href="#">Discord</a>
+            <a href="#">Instagram</a>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+        <div className="footer-bottom">
+          <p>© 2025 Pixel Vibe. All rights reserved.</p>
+          <p style={{ color: 'rgba(255,255,255,0.15)' }}>Designed with ⚡ by Pixel Vibe</p>
         </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-dark-800/30 border-y border-gray-800">
-        <div className="mb-12">
-          <h2 className="text-3xl font-display font-bold text-white relative inline-block mb-4">
-            Categories Section
-            <div className="absolute -bottom-2 left-0 w-1/2 h-1 bg-accent rounded-full"></div>
-          </h2>
-          <p className="text-gray-400 max-w-2xl">Find the perfect design for your needs. We categorize our creations into Gaming and Normal styles.</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category) => (
-            <CategoryCard key={category.id} category={category} />
-          ))}
-        </div>
-      </section>
-    </div>
+      </footer>
+    </>
   );
-};
+}
 
 export default Home;
