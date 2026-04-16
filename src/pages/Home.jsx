@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import '../index.css';
-import { db } from '../firebase/config';
-import { collection, getDocs } from 'firebase/firestore';
+import { supabase } from '../supabase/config';
 
 function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -15,18 +14,26 @@ function Home() {
 
   const [portfolioItems, setPortfolioItems] = useState([]);
   const [loadingPortfolio, setLoadingPortfolio] = useState(true);
+  const [user, setUser] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
-    getDocs(collection(db, 'portfolio'))
-      .then(snap => {
-        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setPortfolioItems(items);
-        setLoadingPortfolio(false);
-      })
-      .catch(e => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    const fetchPortfolio = async () => {
+      try {
+        const { data, error } = await supabase.from('portfolio').select('*');
+        if (error) throw error;
+        setPortfolioItems(data || []);
+      } catch (e) {
         console.error('Error fetching portfolio:', e);
+      } finally {
         setLoadingPortfolio(false);
-      });
+      }
+    };
+    fetchPortfolio();
   }, []);
 
   const services = [
@@ -153,7 +160,33 @@ function Home() {
           <a href="#about">About</a>
           <a href="#pricing">Pricing</a>
           <a href="#contact">Contact</a>
-          <a href="#contact" className="nav-cta">Hire Me</a>
+          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <a href="#contact" className="nav-cta">Hire Me</a>
+            {user && (
+              <div className="nav-profile" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', paddingLeft: '0.8rem', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="user-avatar" style={{ 
+                  width: '36px', height: '36px', borderRadius: '10px', 
+                  background: 'linear-gradient(135deg, var(--cyan), var(--blue))',
+                  display: 'flex', alignItems: 'center', justifyCenter: 'center',
+                  fontSize: '1rem', fontWeight: '900', color: '#000',
+                  fontFamily: "'Orbitron', sans-serif"
+                }}>
+                  <span style={{ margin: 'auto' }}>{(user.user_metadata?.full_name || user.email)?.[0].toUpperCase()}</span>
+                </div>
+                <div className="user-info hide-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '800', fontFamily: "'Rajdhani', sans-serif", color: '#fff', letterSpacing: '1px' }}>
+                    {user.user_metadata?.full_name?.split(' ')[0] || 'CREATOR'}
+                  </span>
+                  <button 
+                    onClick={() => supabase.auth.signOut()} 
+                    style={{ background: 'none', border: 'none', padding: 0, color: 'var(--pink)', fontSize: '0.65rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '1px' }}
+                  >
+                    LOGOUT
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -236,15 +269,24 @@ function Home() {
             <div className="col-span-full py-12 text-center text-gray-500 font-['Rajdhani'] uppercase tracking-widest">No items found. Add some from the Admin Panel!</div>
           ) : (
             filteredPortfolio.map(item => (
-              <div key={item.id} className="p-card reveal" ref={addToRefs} onClick={() => triggerNotify(`Viewing: ${item.title}`)}>
-                <div className="p-card-bg" style={{ position:'absolute', inset:0, background: item.bg || `linear-gradient(135deg, ${item.color}20, #0a0a1f)` }}></div>
-                <svg className="p-card-shapes" viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style={{ color: item.color }}>
-                  <polygon points="150,20 260,80 230,200 70,200 40,80" fill="none" stroke="currentColor" strokeWidth="1"/>
-                  <circle cx="150" cy="120" r="40" fill="none" stroke="currentColor" strokeWidth="0.8"/>
-                  <line x1="40" y1="80" x2="260" y2="80" stroke="currentColor" strokeWidth="0.5"/>
-                  <circle cx="150" cy="120" r="8" fill="currentColor" opacity="0.4"/>
-                </svg>
-                <div className="p-card-overlay"></div>
+              <div key={item.id} className="p-card reveal" ref={addToRefs} onClick={() => setSelectedItem(item)}>
+                <div className="p-card-bg" style={{ 
+                  position:'absolute', 
+                  inset:0, 
+                  background: item.bg || `linear-gradient(135deg, ${item.color}20, #0a0a1f)`,
+                  backgroundImage: item.image_url ? `url(${item.image_url})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}></div>
+                {!item.image_url && (
+                  <svg className="p-card-shapes" viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style={{ color: item.color }}>
+                    <polygon points="150,20 260,80 230,200 70,200 40,80" fill="none" stroke="currentColor" strokeWidth="1"/>
+                    <circle cx="150" cy="120" r="40" fill="none" stroke="currentColor" strokeWidth="0.8"/>
+                    <line x1="40" y1="80" x2="260" y2="80" stroke="currentColor" strokeWidth="0.5"/>
+                    <circle cx="150" cy="120" r="8" fill="currentColor" opacity="0.4"/>
+                  </svg>
+                )}
+                <div className="p-card-overlay" style={{ background: item.image_url ? 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' : undefined }}></div>
                 <div className="p-card-info">
                   <span className="p-tag" style={{ color: item.color, borderColor: `${item.color}40` }}>{item.sub}</span>
                   <div className="p-title">{item.title}</div>
@@ -505,8 +547,59 @@ function Home() {
           <p style={{ color: 'rgba(255,255,255,0.15)' }}>Designed with ⚡ by Pixel Vibe</p>
         </div>
       </footer>
+      {/* LIGHTBOX */}
+      {selectedItem && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-300"
+          onClick={() => setSelectedItem(null)}
+        >
+          <button 
+            onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }} 
+            className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-[110]"
+          >
+            <X size={24} />
+          </button>
+          
+          <div 
+            className="relative w-full max-w-5xl max-h-[90vh] flex flex-col items-center animate-in zoom-in-95 duration-500"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {selectedItem.image_url ? (
+               <img 
+                 src={selectedItem.image_url} 
+                 alt={selectedItem.title} 
+                 className="w-full h-full object-contain rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,0.8)] border border-white/5"
+               />
+            ) : (
+              <div className="w-full aspect-video rounded-3xl flex items-center justify-center relative overflow-hidden" style={{ background: selectedItem.bg || '#0d0d22' }}>
+                <svg className="w-64 h-64 opacity-20" viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style={{ color: selectedItem.color }}>
+                  <polygon points="150,20 260,80 230,200 70,200 40,80" fill="none" stroke="currentColor" strokeWidth="1"/>
+                  <circle cx="150" cy="120" r="40" fill="none" stroke="currentColor" strokeWidth="0.8"/>
+                </svg>
+                <div className="absolute text-5xl font-['Orbitron'] font-black text-white/10">PREVIEW</div>
+              </div>
+            )}
+            
+            <div className="mt-8 text-center space-y-2">
+              <span className="px-4 py-1.5 rounded-full border border-white/10 text-xs font-['Rajdhani'] font-bold tracking-widest uppercase" style={{ color: selectedItem.color }}>
+                {selectedItem.sub}
+              </span>
+              <h2 className="text-3xl md:text-5xl font-['Orbitron'] font-black text-white">{selectedItem.title}</h2>
+              <p className="text-gray-400 font-['Rajdhani'] tracking-wide max-w-lg">Premium design crafted with precision for high-end gaming and creative brands.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
+
+// Simple X icon replacement since I don't have lucide-react here yet, or I can define it
+const X = ({ size }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"></line>
+    <line x1="6" y1="6" x2="18" y2="18"></line>
+  </svg>
+);
 
 export default Home;

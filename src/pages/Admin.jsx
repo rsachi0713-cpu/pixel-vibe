@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../firebase/config';
-import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { supabase } from '../supabase/config';
 import { 
   LayoutDashboard, Image, Settings, MessageSquare, 
   Tag, CreditCard, Plus, Edit2, Trash2, Search, Bell, Menu, X
@@ -16,6 +15,9 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   
   const [newItem, setNewItem] = useState({ title: '', cat: 'gaming-thumb', color: '#00f5d4' });
+  const [imageFile, setImageFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   // Load from Firebase
   useEffect(() => {
@@ -24,9 +26,9 @@ export default function Admin() {
 
   const loadPortfolio = async () => {
     try {
-      const snap = await getDocs(collection(db, 'portfolio'));
-      const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setPortfolio(items);
+      const { data, error } = await supabase.from('portfolio').select('*');
+      if (error) throw error;
+      setPortfolio(data || []);
       setLoading(false);
     } catch (e) {
       console.error(e);
@@ -34,27 +36,77 @@ export default function Admin() {
     }
   };
 
-  const handleAddItem = async () => {
+  const handleSaveItem = async () => {
     if(!newItem.title) return;
+    setUploading(true);
     try {
-      await addDoc(collection(db, 'portfolio'), {
-        title: newItem.title,
-        cat: newItem.cat,
-        color: newItem.color || '#00f5d4',
-        bg: 'linear-gradient(135deg,#0d0d0d,#1a1a2e,#16213e)',
-        sub: newItem.cat.replace('-', ' '),
-        icon: '✦',
-        status: 'Active',
-        views: '0'
-      });
+      let imageUrl = editingItem ? editingItem.image_url : '';
+      
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('portfolio')
+          .upload(filePath, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('portfolio')
+          .getPublicUrl(filePath);
+          
+        imageUrl = publicUrl;
+      }
+
+      if (editingItem) {
+        // Update
+        const { error } = await supabase
+          .from('portfolio')
+          .update({
+            title: newItem.title,
+            cat: newItem.cat,
+            color: newItem.color,
+            sub: newItem.cat.replace('-', ' '),
+            image_url: imageUrl
+          })
+          .eq('id', editingItem.id);
+        if (error) throw error;
+      } else {
+        // Insert
+        const { error } = await supabase.from('portfolio').insert([{
+          title: newItem.title,
+          cat: newItem.cat,
+          color: newItem.color || '#00f5d4',
+          bg: 'linear-gradient(135deg,#0d0d0d,#1a1a2e,#16213e)',
+          sub: newItem.cat.replace('-', ' '),
+          image_url: imageUrl,
+          icon: '✦',
+          status: 'Active',
+          views: '0'
+        }]);
+        if (error) throw error;
+      }
+
       setNewItem({ title: '', cat: 'gaming-thumb', color: '#00f5d4' });
+      setImageFile(null);
+      setEditingItem(null);
       setIsAddModalOpen(false);
-      showToast('Item successfully saved!');
+      showToast(editingItem ? 'Item updated!' : 'Item successfully saved!');
       loadPortfolio();
     } catch (e) {
-      console.error('Error adding:', e);
-      showToast('Error saving item. Check console.');
+      console.error('Error saving:', e);
+      showToast('Error saving item. ' + e.message);
+    } finally {
+      setUploading(false);
     }
+  };
+
+  const openEditModal = (item) => {
+    setEditingItem(item);
+    setNewItem({ title: item.title, cat: item.cat, color: item.color });
+    setIsAddModalOpen(true);
   };
 
   const showToast = (msg) => {
@@ -64,8 +116,13 @@ export default function Admin() {
 
   const handleDelete = async (id) => {
     if(window.confirm('Are you sure you want to delete this item?')) {
-      await deleteDoc(doc(db, 'portfolio', id));
-      loadPortfolio();
+      const { error } = await supabase.from('portfolio').delete().eq('id', id);
+      if (error) {
+        console.error('Error deleting:', error);
+        showToast('Error deleting item.');
+      } else {
+        loadPortfolio();
+      }
     }
   };
 
@@ -127,8 +184,8 @@ export default function Admin() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-[#0d0d22] border border-[#00f5d4]/30 rounded-2xl w-full max-w-md p-6 shadow-2xl">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-['Orbitron'] font-bold text-white">Add New Item</h3>
-                <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-white">
+                <h3 className="text-xl font-['Orbitron'] font-bold text-white">{editingItem ? 'Edit Item' : 'Add New Item'}</h3>
+                <button onClick={() => { setIsAddModalOpen(false); setEditingItem(null); setNewItem({ title: '', cat: 'gaming-thumb', color: '#00f5d4' }); }} className="text-gray-400 hover:text-white">
                   <X size={20} />
                 </button>
               </div>
@@ -152,8 +209,16 @@ export default function Admin() {
                   <label className="block text-xs font-['Rajdhani'] uppercase tracking-widest text-gray-400 mb-1">Theme Color</label>
                   <input type="color" value={newItem.color} onChange={e=>setNewItem({...newItem, color: e.target.value})} className="w-full h-10 bg-white/5 border border-white/10 rounded-lg p-1" />
                 </div>
-                <button onClick={handleAddItem} className="w-full bg-gradient-to-r from-[#00f5d4] to-[#4361ee] text-black font-bold py-3 rounded-xl mt-4 font-['Rajdhani'] tracking-widest hover:scale-[1.02] transition-transform">
-                  SAVE ITEM
+                <div>
+                  <label className="block text-xs font-['Rajdhani'] uppercase tracking-widest text-gray-400 mb-1">Project Image</label>
+                  <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files[0])} className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[#00f5d4]" />
+                </div>
+                <button 
+                  onClick={handleSaveItem} 
+                  disabled={uploading}
+                  className="w-full bg-gradient-to-r from-[#00f5d4] to-[#4361ee] text-black font-bold py-3 rounded-xl mt-4 font-['Rajdhani'] tracking-widest hover:scale-[1.02] transition-transform disabled:opacity-50"
+                >
+                  {uploading ? 'PROCESSING...' : (editingItem ? 'UPDATE ITEM' : 'SAVE ITEM')}
                 </button>
               </div>
             </div>
@@ -187,7 +252,7 @@ export default function Admin() {
               </div>
               <div className="hidden sm:block">
                 <div className="text-sm font-bold text-white font-['Rajdhani'] tracking-widest">ADMIN USER</div>
-                <div className="text-xs text-gray-500">Superadmin</div>
+                <button onClick={() => supabase.auth.signOut()} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase transition-colors">LOGOUT</button>
               </div>
             </div>
           </div>
@@ -248,14 +313,18 @@ export default function Admin() {
                     <tbody>
                       {portfolio.length === 0 && (
                         <tr>
-                          <td colSpan="5" className="p-8 text-center text-gray-500">No items found in Firebase Database.</td>
+                          <td colSpan="5" className="p-8 text-center text-gray-500">No items found in Supabase Database.</td>
                         </tr>
                       )}
                       {portfolio.map((item) => (
                         <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xs" style={{background: `${item.color}20`, color: item.color}}>IMG</div>
+                              {item.image_url ? (
+                                <img src={item.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-white/10" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[10px] font-bold" style={{background: `${item.color}20`, color: item.color}}>NO IMG</div>
+                              )}
                               <span className="font-semibold text-white">{item.title}</span>
                             </div>
                           </td>
@@ -268,7 +337,7 @@ export default function Admin() {
                           </td>
                           <td className="p-4">
                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"><Edit2 size={16} /></button>
+                              <button onClick={() => openEditModal(item)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"><Edit2 size={16} /></button>
                               <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
                             </div>
                           </td>
@@ -288,7 +357,7 @@ export default function Admin() {
                 <Settings className="text-[#00f5d4] animate-[spin_4s_linear_infinite]" size={32} />
               </div>
               <h2 className="text-2xl font-bold text-white font-['Orbitron'] tracking-widest mb-2 uppercase">{activeTab} Manager</h2>
-              <p className="text-gray-500 max-w-sm">This module is connected to Firebase successfully. Full management screens coming soon.</p>
+              <p className="text-gray-500 max-w-sm">This module is connected to Supabase successfully. Full management screens coming soon.</p>
             </div>
           )}
 
