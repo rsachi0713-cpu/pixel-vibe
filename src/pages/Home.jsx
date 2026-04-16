@@ -223,7 +223,10 @@ function Home() {
 
       {/* NAV */}
       <nav id="navbar" className={scrolled ? 'scrolled' : ''}>
-        <div className="logo cursor-pointer" onClick={() => { navigate('/'); window.scrollTo({top: 0, behavior: 'smooth'}); }}>PIXEL VIBE</div>
+        <div className="logo cursor-pointer flex items-center gap-3" onClick={() => { navigate('/'); window.scrollTo({top: 0, behavior: 'smooth'}); }}>
+          <img src="/logo.png" alt="Pixel Vibe Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
+          <span>PIXEL VIBE</span>
+        </div>
         <div className="nav-links">
           <a href="#hero">Home</a>
           <a href="#portfolio">Portfolio</a>
@@ -403,9 +406,8 @@ function Home() {
       <section id="about">
         <div className="about-inner">
           <div className="about-visual reveal-left" ref={addToRefs}>
-            <div className="about-img-frame">
-              <span className="avatar-icon">👾</span>
-              <div style={{ position:'absolute', inset:0, background: 'linear-gradient(to top, rgba(0,245,212,0.08), transparent)' }}></div>
+            <div className="about-img-frame overflow-hidden">
+              <img src="/me.jpg" alt="Pixel Vibe Creator" className="w-full h-full object-cover" />
             </div>
             <div className="about-glow-badge">
               <div className="badge-role">Graphic Designer</div>

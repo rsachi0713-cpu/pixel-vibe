@@ -12,7 +12,9 @@ export default function Admin() {
   const [toast, setToast] = useState({ show: false, msg: '' });
 
   const [portfolio, setPortfolio] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ views: 0, inquiries: 0, services: 6 });
   
   const [newItem, setNewItem] = useState({ title: '', cat: 'gaming-thumb', color: '#00f5d4', is_free: false });
   const [imageFile, setImageFile] = useState(null);
@@ -26,9 +28,24 @@ export default function Admin() {
 
   const loadPortfolio = async () => {
     try {
-      const { data, error } = await supabase.from('portfolio').select('*');
-      if (error) throw error;
-      setPortfolio(data || []);
+      // 1. Load Portfolio
+      const { data: pData, error: pError } = await supabase.from('portfolio').select('*');
+      if (pError) throw pError;
+      setPortfolio(pData || []);
+
+      // 2. Load Messages
+      const { data: mData, error: mError } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
+      if (mError) throw mError;
+      setMessages(mData || []);
+
+      // 3. Calc Stats
+      const totalViews = (pData || []).reduce((acc, item) => acc + (parseInt(item.views) || 0), 0);
+      setStats({
+        views: totalViews,
+        inquiries: mData?.length || 0,
+        services: 6 // Based on the 6 main service categories
+      });
+
       setLoading(false);
     } catch (e) {
       console.error(e);
@@ -155,10 +172,14 @@ export default function Admin() {
         <div className="p-6">
           <div 
             onClick={() => window.location.href = '/'}
-            className="font-['Orbitron'] font-black text-xl tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-[#00f5d4] to-[#f72585] mb-10 cursor-pointer"
+            className="flex flex-col items-center text-center mb-10 cursor-pointer group"
             style={{ cursor: 'pointer' }}
           >
-            PIXEL VIBE <span className="text-white text-xs block mt-1 tracking-normal font-sans">ADMIN AREA</span>
+            <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain mb-3 group-hover:scale-110 transition-transform" />
+            <div className="font-['Orbitron'] font-black text-xl tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-[#00f5d4] to-[#f72585]">
+              PIXEL VIBE
+            </div>
+            <span className="text-white text-[10px] tracking-widest uppercase font-sans opacity-50">ADMIN AREA</span>
           </div>
           
           <div className="space-y-2">
@@ -283,10 +304,10 @@ export default function Admin() {
               <h2 className="text-2xl font-bold text-white font-['Orbitron'] tracking-wider mb-6">Overview</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {[
-                  { label: 'Total Views', value: '24.5K', trend: '+12%', color: '#00f5d4' },
+                  { label: 'Total Views', value: stats.views.toLocaleString(), trend: 'Overall', color: '#00f5d4' },
                   { label: 'Portfolio Items', value: portfolio.length || '0', trend: 'Live', color: '#f72585' },
-                  { label: 'Pending Inquiries', value: '8', trend: '-2', color: '#7209b7' },
-                  { label: 'Active Services', value: '6', trend: '0', color: '#4361ee' }
+                  { label: 'Received Inquiries', value: stats.inquiries, trend: 'New', color: '#7209b7' },
+                  { label: 'Active Services', value: stats.services, trend: 'Ready', color: '#4361ee' }
                 ].map((stat, i) => (
                   <div key={i} className="bg-[#0d0d22] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity" style={{ background: stat.color, transform: 'translate(30%, -30%)' }}></div>
@@ -374,8 +395,41 @@ export default function Admin() {
             </div>
           )}
 
+          {/* Inquiries Tab */}
+          {activeTab === 'messages' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <h2 className="text-2xl font-bold text-white font-['Orbitron'] tracking-wider mb-6 text-center md:text-left uppercase">Recent Inquiries</h2>
+              <div className="grid grid-cols-1 gap-4">
+                {messages.length === 0 ? (
+                  <div className="p-12 text-center text-gray-500 bg-[#0d0d22] border border-dashed border-white/10 rounded-2xl">No inquiries found yet.</div>
+                ) : (
+                  messages.map((m) => (
+                    <div key={m.id} className="bg-[#0d0d22] border border-white/5 p-6 rounded-2xl hover:border-[#00f5d4]/30 transition-all border-l-4" style={{ borderColor: `rgba(0, 245, 212, ${activeTab === 'messages' ? 0.3 : 0.1})` }}>
+                      <div className="flex flex-col md:flex-row justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <span className="text-white font-bold font-['Rajdhani'] text-lg uppercase tracking-wider">{m.name}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-[#00f5d4]/10 text-[#00f5d4] font-bold">{m.service}</span>
+                          </div>
+                          <div className="text-sm text-gray-500">{m.email} • {new Date(m.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Budget Preference</div>
+                          <div className="text-[#f72585] font-bold font-['Rajdhani'] uppercase">{m.budget}</div>
+                        </div>
+                      </div>
+                      <div className="mt-4 p-4 bg-white/5 rounded-xl text-gray-400 text-sm leading-relaxed italic">
+                        "{m.description || 'No message provided'}"
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Under Construction handling for other tabs */}
-          {['services', 'pricing', 'messages'].includes(activeTab) && (
+          {['services', 'pricing'].includes(activeTab) && (
             <div className="animate-in fade-in flex flex-col items-center justify-center h-[60vh] text-center border-2 border-dashed border-white/10 rounded-3xl bg-[#0d0d22]">
               <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
                 <Settings className="text-[#00f5d4] animate-[spin_4s_linear_infinite]" size={32} />
