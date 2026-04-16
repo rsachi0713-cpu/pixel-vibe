@@ -19,6 +19,7 @@ function Home() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [orderChoice, setOrderChoice] = useState(null); // { serviceTitle, color }
   const [orderQty, setOrderQty] = useState(1);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const [contactForm, setContactForm] = useState({
     name: '',
@@ -147,8 +148,26 @@ function Home() {
 
     setSubmitting(true);
     try {
-      // 1. Save to Supabase Messages Table
-      const { error } = await supabase.from('messages').insert([{
+      // 1. Send to Formspree
+      const response = await fetch('https://formspree.io/f/xwvalvoy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          name: contactForm.name,
+          email: contactForm.email,
+          service: contactForm.service,
+          budget: contactForm.budget,
+          message: contactForm.message
+        })
+      });
+
+      if (!response.ok) throw new Error('Formspree submission failed');
+
+      // 2. Also log to Supabase for backup (optional but good for tracking)
+      await supabase.from('messages').insert([{
         name: contactForm.name,
         email: contactForm.email,
         service: contactForm.service,
@@ -156,16 +175,12 @@ function Home() {
         description: contactForm.message
       }]);
 
-      if (error) throw error;
-
-      // 2. Clear Form & Show Success
-      triggerNotify('Message sent! I will get back to you within 24 hours. ✓');
+      // 3. Clear Form & Show Success Modal
+      setShowSuccess(true);
       setContactForm({ name: '', email: '', service: 'Gaming Thumbnail', budget: 'Basic', message: '' });
 
-      // NOTE TO USER: To get actual email to tharindubackup01@gmail.com, 
-      // you can integrate EmailJS here or use Supabase Edge Functions.
     } catch (e) {
-      console.error(e);
+      console.error('Submission error:', e);
       triggerNotify('Error sending message. Please try again.');
     } finally {
       setSubmitting(false);
@@ -736,6 +751,28 @@ function Home() {
             </div>
             
             <button onClick={() => setOrderChoice(null)} className="mt-8 text-gray-500 hover:text-white text-xs font-['Rajdhani'] uppercase tracking-widest font-bold">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* SUCCESS MODAL */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-[#0d0d22] border border-cyan/30 p-10 rounded-3xl w-full max-w-sm relative z-[2010] text-center shadow-[0_0_100px_rgba(0,245,212,0.15)] animate-in zoom-in-90 duration-500">
+            <div className="w-20 h-20 bg-cyan/10 border border-cyan/20 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+              <div className="absolute inset-0 rounded-full bg-cyan/20 animate-ping"></div>
+              <span className="text-3xl text-cyan relative z-10">✓</span>
+            </div>
+            <h3 className="text-2xl font-['Orbitron'] font-black text-white mb-2 tracking-tight">MESSAGE <span className="text-cyan">SENT!</span></h3>
+            <p className="text-gray-400 font-['Rajdhani'] mb-10 tracking-wider uppercase text-xs leading-relaxed">
+              Your inquiry has been received.<br/>I'll get back to you within 24 hours.
+            </p>
+            <button 
+              onClick={() => setShowSuccess(false)} 
+              className="w-full bg-gradient-to-r from-cyan to-blue text-black font-black py-4 rounded-xl font-['Rajdhani'] tracking-[3px] uppercase text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_10px_30px_rgba(0,245,212,0.3)]"
+            >
+              CONTINUE
+            </button>
           </div>
         </div>
       )}
