@@ -4,6 +4,7 @@ import { supabase } from './supabase/config';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Auth from './pages/Auth';
+import PricingProcess from './pages/PricingProcess';
 import './index.css';
 
 function App() {
@@ -51,6 +52,10 @@ function App() {
         <Route 
           path="/admin" 
           element={session ? <Admin /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/order-plan/:planName" 
+          element={session ? <PricingProcess /> : <Navigate to="/login" />} 
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

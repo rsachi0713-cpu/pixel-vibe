@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X } from 'lucide-react';
 import '../index.css';
 import { supabase } from '../supabase/config';
@@ -12,6 +13,7 @@ function Home() {
   const ringRef = useRef(null);
   const revealRefs = useRef([]);
   let notifTimeout = useRef(null);
+  const navigate = useNavigate();
 
   const [portfolioItems, setPortfolioItems] = useState([]);
   const [loadingPortfolio, setLoadingPortfolio] = useState(true);
@@ -49,6 +51,10 @@ function Home() {
     fetchPortfolio();
   }, []);
 
+  const getCount = (cat) => {
+    return portfolioItems.filter(item => item.cat === cat).length;
+  };
+
   const services = [
     {icon:'🎮',title:'Gaming Thumbnails',desc:'High-impact YouTube & stream thumbnails engineered to stop the scroll and dominate search results.',price:'',color:'var(--cyan)'},
     {icon:'⚡',title:'Gaming Logos',desc:'Fierce esports logos and team branding that commands respect in any competitive arena.',price:'',color:'var(--pink)'},
@@ -60,6 +66,7 @@ function Home() {
 
   // Mouse move for custom cursor
   useEffect(() => {
+    document.body.classList.add('has-custom-cursor');
     let mx=0, my=0, rx=0, ry=0;
     
     const handleMouseMove = (e) => {
@@ -102,6 +109,7 @@ function Home() {
     });
 
     return () => {
+      document.body.classList.remove('has-custom-cursor');
       document.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animId);
       interactiveElements.forEach(el => {
@@ -110,6 +118,8 @@ function Home() {
       });
     };
   }); // Run when elements might change
+
+
 
   // Navbar scroll
   useEffect(() => {
@@ -213,7 +223,7 @@ function Home() {
 
       {/* NAV */}
       <nav id="navbar" className={scrolled ? 'scrolled' : ''}>
-        <div className="logo">PIXEL VIBE</div>
+        <div className="logo cursor-pointer" onClick={() => { navigate('/'); window.scrollTo({top: 0, behavior: 'smooth'}); }}>PIXEL VIBE</div>
         <div className="nav-links">
           <a href="#hero">Home</a>
           <a href="#portfolio">Portfolio</a>
@@ -278,22 +288,22 @@ function Home() {
             <div className="mini-card mc1">
               <span className="mc-icon">🎮</span>
               <div className="mc-label">Gaming Thumbs</div>
-              <div className="mc-sub" style={{color: 'var(--cyan)'}}>24 Designs</div>
+              <div className="mc-sub" style={{color: 'var(--cyan)'}}>{getCount('gaming-thumb')} Designs</div>
             </div>
             <div className="mini-card mc2">
               <span className="mc-icon">⚡</span>
               <div className="mc-label">Gaming Logos</div>
-              <div className="mc-sub" style={{color: 'var(--pink)'}}>18 Designs</div>
+              <div className="mc-sub" style={{color: 'var(--pink)'}}>{getCount('gaming-logo')} Designs</div>
             </div>
             <div className="mini-card mc3">
               <span className="mc-icon">📡</span>
               <div className="mc-label">Social Posts</div>
-              <div className="mc-sub" style={{color: 'var(--purple)'}}>32 Designs</div>
+              <div className="mc-sub" style={{color: 'var(--purple)'}}>{getCount('gaming-post')} Designs</div>
             </div>
             <div className="mini-card mc4">
               <span className="mc-icon">✦</span>
               <div className="mc-label">Normal Logos</div>
-              <div className="mc-sub" style={{color: 'var(--blue)'}}>15 Designs</div>
+              <div className="mc-sub" style={{color: 'var(--blue)'}}>{getCount('normal-logo')} Designs</div>
             </div>
           </div>
         </div>
@@ -440,47 +450,35 @@ function Home() {
           </div>
           <div className="pricing-grid reveal" ref={addToRefs}>
             <div className="pr-card">
-              <div className="pr-name">Starter</div>
-              <div className="pr-price"></div>
-              <div className="pr-period">per design</div>
+              <div className="pr-price">FREE</div>
+              <div className="pr-period">Limited availability</div>
               <ul className="pr-features">
-                <li className="yes">1 Design Variation</li>
-                <li className="yes">HD Resolution (1080p)</li>
-                <li className="yes">Source File Included</li>
-                <li className="yes">3-day Delivery</li>
-                <li className="no">Unlimited Revisions</li>
-                <li className="no">Priority Support</li>
+                {/* No features as requested */}
               </ul>
-              <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={() => triggerNotify('Starter plan selected! Redirecting to contact...')}>Get Started</button>
+              <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate('/order-plan/free')}>Get Started</button>
             </div>
             <div className="pr-card featured">
               <div className="pr-badge">Most Popular</div>
-              <div className="pr-name">Pro</div>
-              <div className="pr-price"></div>
-              <div className="pr-period">per project</div>
+              <div className="pr-price">BASIC</div>
+              <div className="pr-period">per design</div>
               <ul className="pr-features">
-                <li className="yes">3 Design Variations</li>
-                <li className="yes">4K Resolution</li>
-                <li className="yes">All Source Files</li>
-                <li className="yes">1-day Delivery</li>
+                <li className="yes">1 Design Variation</li>
+                <li className="yes">High Quality Design</li>
+                <li className="yes">1-Day Delivery</li>
                 <li className="yes">Unlimited Revisions</li>
-                <li className="no">Priority Support</li>
               </ul>
-              <button className="btn-primary" style={{ width: '100%' }} onClick={() => triggerNotify('Pro plan selected! Redirecting to contact...')}>Get Started</button>
+              <button className="btn-primary" style={{ width: '100%' }} onClick={() => navigate('/order-plan/basic')}>Get Started</button>
             </div>
             <div className="pr-card">
-              <div className="pr-name">Elite</div>
-              <div className="pr-price"></div>
-              <div className="pr-period">full package</div>
+              <div className="pr-price" style={{ fontSize: '2.5rem' }}>STANDARD</div>
+              <div className="pr-period">Best value</div>
               <ul className="pr-features">
-                <li className="yes">Unlimited Variations</li>
-                <li className="yes">4K + Vector</li>
-                <li className="yes">Complete Brand Kit</li>
-                <li className="yes">Same-day Rush</li>
+                <li className="yes">5 Design Variations</li>
+                <li className="yes">High Quality Design</li>
+                <li className="yes">2-Day Delivery</li>
                 <li className="yes">Unlimited Revisions</li>
-                <li className="yes">Priority Support 24/7</li>
               </ul>
-              <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={() => triggerNotify('Elite plan selected! Redirecting to contact...')}>Get Started</button>
+              <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate('/order-plan/standard')}>Get Started</button>
             </div>
           </div>
         </div>
@@ -757,8 +755,14 @@ function Home() {
 
       {/* SUCCESS MODAL */}
       {showSuccess && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-          <div className="bg-[#0d0d22] border border-cyan/30 p-10 rounded-3xl w-full max-w-sm relative z-[2010] text-center shadow-[0_0_100px_rgba(0,245,212,0.15)] animate-in zoom-in-90 duration-500">
+        <div 
+          className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-in fade-in duration-300"
+          onClick={() => setShowSuccess(false)}
+        >
+          <div 
+            className="bg-[#0d0d22] border border-cyan/30 p-10 rounded-3xl w-full max-w-sm relative z-[2010] text-center shadow-[0_0_100px_rgba(0,245,212,0.15)] animate-in zoom-in-90 duration-500"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="w-20 h-20 bg-cyan/10 border border-cyan/20 rounded-full flex items-center justify-center mx-auto mb-6 relative">
               <div className="absolute inset-0 rounded-full bg-cyan/20 animate-ping"></div>
               <span className="text-3xl text-cyan relative z-10">✓</span>
@@ -769,7 +773,8 @@ function Home() {
             </p>
             <button 
               onClick={() => setShowSuccess(false)} 
-              className="w-full bg-gradient-to-r from-cyan to-blue text-black font-black py-4 rounded-xl font-['Rajdhani'] tracking-[3px] uppercase text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_10px_30px_rgba(0,245,212,0.3)]"
+              className="w-full bg-gradient-to-r from-cyan to-blue text-black font-black py-4 rounded-xl font-['Rajdhani'] tracking-[3px] uppercase text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_10px_30px_rgba(0,245,212,0.3)] cursor-pointer"
+              style={{ cursor: 'pointer' }}
             >
               CONTINUE
             </button>

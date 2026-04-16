@@ -16,12 +16,16 @@
 
 html { scroll-behavior: smooth; }
 
+body.has-custom-cursor, 
+body.has-custom-cursor * {
+  cursor: none !important;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background: var(--dark);
   color: #fff;
   overflow-x: hidden;
-  cursor: none;
 }
 
 /* Custom cursor */
@@ -254,7 +258,7 @@ section {
   letter-spacing: 2px;
   text-transform: uppercase;
   border: none;
-  cursor: none;
+  cursor: pointer;
   transition: all 0.3s;
 }
 
@@ -340,7 +344,7 @@ section {
   padding: 9px 22px;
   border-radius: 100px;
   border: none;
-  cursor: none;
+  cursor: pointer;
   transition: all 0.3s;
 }
 .filter-btn.off { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); }
@@ -348,7 +352,7 @@ section {
 .filter-btn.on { color: #000; }
 
 .portfolio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
-.p-card { border-radius: 16px; overflow: hidden; position: relative; height: 240px; cursor: none; transition: all 0.4s; border: 1px solid rgba(255,255,255,0.05); }
+.p-card { border-radius: 16px; overflow: hidden; position: relative; height: 240px; cursor: pointer; transition: all 0.4s; border: 1px solid rgba(255,255,255,0.05); }
 .p-card:hover { transform: translateY(-10px) scale(1.02); }
 .p-card-bg { position: absolute; inset: 0; transition: transform 0.5s; }
 .p-card:hover .p-card-bg { transform: scale(1.08); }
@@ -363,7 +367,7 @@ section {
 /* ===== SERVICES ===== */
 #services { padding: 120px 3rem; background: linear-gradient(180deg, var(--dark), var(--dark2)); }
 .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
-.s-card { background: var(--card); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 36px; position: relative; overflow: hidden; transition: all 0.4s; cursor: none; }
+.s-card { background: var(--card); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 36px; position: relative; overflow: hidden; transition: all 0.4s; cursor: pointer; }
 .s-card::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.4s; border-radius: 20px; pointer-events: none;}
 .s-card:hover { transform: translateY(-6px); }
 .s-card:hover::after { opacity: 1; }
@@ -372,7 +376,7 @@ section {
 .s-desc { color: rgba(255,255,255,0.5); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.5rem; position: relative; z-index: 1; }
 .s-footer { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
 .s-price { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1.4rem; }
-.s-btn { padding: 9px 18px; border-radius: 6px; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: none; color: #000; transition: all 0.3s; }
+.s-btn { padding: 9px 18px; border-radius: 6px; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; color: #000; transition: all 0.3s; }
 .s-btn:hover { transform: scale(1.05); }
 
 /* ===== ABOUT ===== */
@@ -402,7 +406,7 @@ section {
 /* ===== PRICING ===== */
 #pricing { padding: 120px 3rem; background: var(--dark); }
 .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
-.pr-card { border-radius: 20px; padding: 40px 36px; border: 1px solid rgba(255,255,255,0.07); background: var(--card); position: relative; transition: all 0.4s; cursor: none; }
+.pr-card { border-radius: 20px; padding: 40px 36px; border: 1px solid rgba(255,255,255,0.07); background: var(--card); position: relative; transition: all 0.4s; cursor: pointer; }
 .pr-card.featured { border-color: var(--cyan); background: linear-gradient(160deg, rgba(0,245,212,0.06), rgba(67,97,238,0.06)); margin-top: 1rem; }
 .pr-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--cyan), var(--blue)); color: #000; padding: 6px 20px; border-radius: 100px; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; }
 .pr-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1rem; color: rgba(255,255,255,0.6); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.75rem; }
@@ -450,7 +454,7 @@ section {
 .form-group select option { background: var(--dark); }
 .form-row { display: grid; grid-template-columns: 1fr; gap: 16px; }
 @media (min-width: 640px) { .form-row { grid-template-columns: 1fr 1fr; } }
-.submit-btn { width: 100%; background: linear-gradient(135deg, var(--cyan), var(--blue)); color: #000; padding: 15px; border-radius: 10px; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.95rem; letter-spacing: 3px; text-transform: uppercase; border: none; cursor: none; transition: all 0.3s; margin-top: 0.5rem; }
+.submit-btn { width: 100%; background: linear-gradient(135deg, var(--cyan), var(--blue)); color: #000; padding: 15px; border-radius: 10px; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.95rem; letter-spacing: 3px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; margin-top: 0.5rem; }
 .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,245,212,0.35); }
 
 /* ===== FOOTER ===== */
@@ -464,7 +468,7 @@ footer { background: var(--dark); border-top: 1px solid rgba(0,245,212,0.08); pa
 .footer-bottom { max-width: 1200px; margin: 2.5rem auto 0; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;}
 .footer-bottom p { color: rgba(255,255,255,0.2); font-size: 0.8rem; }
 .socials { display: flex; gap: 12px; }
-.social-btn { width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; text-decoration: none; transition: all 0.3s; cursor: none; }
+.social-btn { width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; text-decoration: none; transition: all 0.3s; cursor: pointer; }
 .social-btn:hover { background: rgba(0,245,212,0.1); border-color: rgba(0,245,212,0.3); }
 
 /* Scroll indicator */

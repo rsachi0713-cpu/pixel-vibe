@@ -14,7 +14,7 @@ export default function Admin() {
   const [portfolio, setPortfolio] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  const [newItem, setNewItem] = useState({ title: '', cat: 'gaming-thumb', color: '#00f5d4' });
+  const [newItem, setNewItem] = useState({ title: '', cat: 'gaming-thumb', color: '#00f5d4', is_free: false });
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -69,7 +69,8 @@ export default function Admin() {
             cat: newItem.cat,
             color: newItem.color,
             sub: newItem.cat.replace('-', ' '),
-            image_url: imageUrl
+            image_url: imageUrl,
+            is_free: newItem.is_free
           })
           .eq('id', editingItem.id);
         if (error) throw error;
@@ -84,12 +85,13 @@ export default function Admin() {
           image_url: imageUrl,
           icon: '✦',
           status: 'Active',
-          views: '0'
+          views: '0',
+          is_free: newItem.is_free
         }]);
         if (error) throw error;
       }
 
-      setNewItem({ title: '', cat: 'gaming-thumb', color: '#00f5d4' });
+      setNewItem({ title: '', cat: 'gaming-thumb', color: '#00f5d4', is_free: false });
       setImageFile(null);
       setEditingItem(null);
       setIsAddModalOpen(false);
@@ -105,7 +107,7 @@ export default function Admin() {
 
   const openEditModal = (item) => {
     setEditingItem(item);
-    setNewItem({ title: item.title, cat: item.cat, color: item.color });
+    setNewItem({ title: item.title, cat: item.cat, color: item.color, is_free: item.is_free || false });
     setIsAddModalOpen(true);
   };
 
@@ -151,7 +153,11 @@ export default function Admin() {
       {/* SIDEBAR */}
       <div className={`fixed inset-y-0 left-0 bg-[#0a0a1f] border-r border-[#00f5d4]/20 w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-20 md:relative md:translate-x-0`}>
         <div className="p-6">
-          <div className="font-['Orbitron'] font-black text-xl tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-[#00f5d4] to-[#f72585] mb-10">
+          <div 
+            onClick={() => window.location.href = '/'}
+            className="font-['Orbitron'] font-black text-xl tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-[#00f5d4] to-[#f72585] mb-10 cursor-pointer"
+            style={{ cursor: 'pointer' }}
+          >
             PIXEL VIBE <span className="text-white text-xs block mt-1 tracking-normal font-sans">ADMIN AREA</span>
           </div>
           
@@ -185,7 +191,7 @@ export default function Admin() {
             <div className="bg-[#0d0d22] border border-[#00f5d4]/30 rounded-2xl w-full max-w-md p-6 shadow-2xl">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-['Orbitron'] font-bold text-white">{editingItem ? 'Edit Item' : 'Add New Item'}</h3>
-                <button onClick={() => { setIsAddModalOpen(false); setEditingItem(null); setNewItem({ title: '', cat: 'gaming-thumb', color: '#00f5d4' }); }} className="text-gray-400 hover:text-white">
+                <button onClick={() => { setIsAddModalOpen(false); setEditingItem(null); setNewItem({ title: '', cat: 'gaming-thumb', color: '#00f5d4', is_free: false }); }} className="text-gray-400 hover:text-white">
                   <X size={20} />
                 </button>
               </div>
@@ -208,6 +214,16 @@ export default function Admin() {
                 <div>
                   <label className="block text-xs font-['Rajdhani'] uppercase tracking-widest text-gray-400 mb-1">Theme Color</label>
                   <input type="color" value={newItem.color} onChange={e=>setNewItem({...newItem, color: e.target.value})} className="w-full h-10 bg-white/5 border border-white/10 rounded-lg p-1" />
+                </div>
+                <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/5">
+                  <input 
+                    type="checkbox" 
+                    id="is_free" 
+                    checked={newItem.is_free} 
+                    onChange={e => setNewItem({...newItem, is_free: e.target.checked})}
+                    className="w-5 h-5 rounded border-white/10 text-[#00f5d4] focus:ring-offset-0 focus:ring-0"
+                  />
+                  <label htmlFor="is_free" className="text-xs font-['Rajdhani'] uppercase tracking-widest text-white font-bold cursor-pointer">Mark as FREE SAMPLE</label>
                 </div>
                 <div>
                   <label className="block text-xs font-['Rajdhani'] uppercase tracking-widest text-gray-400 mb-1">Project Image</label>
@@ -305,6 +321,7 @@ export default function Admin() {
                       <tr className="bg-white/5 border-b border-white/5 text-xs text-gray-400 font-['Rajdhani'] tracking-widest uppercase">
                         <th className="p-4 font-semibold">Project Name</th>
                         <th className="p-4 font-semibold">Category</th>
+                        <th className="p-4 font-semibold">Type</th>
                         <th className="p-4 font-semibold">Views</th>
                         <th className="p-4 font-semibold">Status</th>
                         <th className="p-4 font-semibold text-right">Actions</th>
@@ -328,7 +345,14 @@ export default function Admin() {
                               <span className="font-semibold text-white">{item.title}</span>
                             </div>
                           </td>
-                          <td className="p-4 text-sm text-gray-400">{item.cat}</td>
+                           <td className="p-4 text-sm text-gray-400">{item.cat}</td>
+                          <td className="p-4">
+                            {item.is_free ? (
+                              <span className="text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-500 border border-yellow-500/30 px-2 py-0.5 rounded-md font-bold uppercase">FREE</span>
+                            ) : (
+                              <span className="text-[10px] text-gray-600 font-bold uppercase">PAID</span>
+                            )}
+                          </td>
                           <td className="p-4 text-sm text-gray-400">{item.views || '0'}</td>
                           <td className="p-4">
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === 'Active' ? 'bg-[#00f5d4]/10 text-[#00f5d4]' : 'bg-gray-800 text-gray-400'}`}>
