@@ -25,6 +25,7 @@ function Home() {
   const [loadingPortfolio, setLoadingPortfolio] = useState(true);
   const [user, setUser] = useState(null);
   const [userStatus, setUserStatus] = useState('free');
+  const [userCoins, setUserCoins] = useState(0);
   const isPro = userStatus === 'pro';
   const [selectedItem, setSelectedItem] = useState(null);
   const [orderChoice, setOrderChoice] = useState(null); // { serviceTitle, color }
@@ -41,6 +42,13 @@ function Home() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    // 1. Capture Referral Code from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      localStorage.setItem('pixel_vibe_ref', refCode);
+    }
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (user) {
@@ -51,27 +59,61 @@ function Home() {
 
     const syncProfile = async (u) => {
       try {
-        // First check if profile exists and get status
+        // 1. Check if profile already has a coins field or exists
         const { data: profile, error: fetchError } = await supabase
           .from('profiles')
-          .select('status')
+          .select('*')
           .eq('id', u.id)
           .single();
         
-        if (profile) setUserStatus(profile.status || 'free');
+        const referrerId = localStorage.getItem('pixel_vibe_ref');
 
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: u.id,
-            email: u.email,
-            full_name: u.user_metadata?.full_name || u.email?.split('@')[0],
-            avatar_url: u.user_metadata?.avatar_url || null,
-            status: profile?.status || u.user_metadata?.status || 'free',
-            updated_at: new Date()
-          }, { onConflict: 'id' });
-        
-        if (error) console.error('Sync error:', error);
+        if (!profile) {
+          // NEW USER REGISTRATION
+          console.log("New user detected, checking for referrer...", referrerId);
+          
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: u.id,
+              email: u.email,
+              full_name: u.user_metadata?.full_name || u.email?.split('@')[0],
+              avatar_url: u.user_metadata?.avatar_url || null,
+              status: 'free',
+              coins: 0,
+              referred_by: referrerId || null,
+              updated_at: new Date()
+            });
+
+          if (!insertError && referrerId && referrerId !== u.id) {
+            // Reward the referrer with 2 coins
+            console.log("Rewarding referrer:", referrerId);
+            const { error: rpcError } = await supabase.rpc('increment_coins', { 
+              user_id: referrerId, 
+              amount: 2 
+            });
+            
+            if (rpcError) console.error("RPC Error:", rpcError);
+            localStorage.removeItem('pixel_vibe_ref'); // Clear after successful reward
+          }
+          
+          setUserStatus('free');
+          setUserCoins(0);
+        } else {
+          // EXISTING USER - Just sync basic info
+          setUserStatus(profile.status || 'free');
+          setUserCoins(profile.coins || 0);
+
+          await supabase
+            .from('profiles')
+            .update({
+              email: u.email,
+              full_name: u.user_metadata?.full_name || u.email?.split('@')[0],
+              avatar_url: u.user_metadata?.avatar_url || null,
+              updated_at: new Date()
+            })
+            .eq('id', u.id);
+        }
       } catch (e) {
         console.error('Profile sync failed:', e);
       }
@@ -901,27 +943,38 @@ function Home() {
         </div>
       )}
 
-      {user && (
-        <ProfileModal 
-          show={showProfile}
-          onClose={() => setShowProfile(false)}
-          user={user}
-          isPro={isPro}
-          profileName={profileName}
-          setProfileName={setProfileName}
-          onAvatarChange={onAvatarChange}
-          avatarPreview={avatarPreview}
-          updatingProfile={updatingProfile}
-          handleUpdateProfile={handleUpdateProfile}
-        />
-      )}
+          {user && (
+            <ProfileModal 
+              show={showProfile}
+              onClose={() => setShowProfile(false)}
+              user={user}
+              isPro={isPro}
+              userCoins={userCoins}
+              profileName={profileName}
+              setProfileName={setProfileName}
+              onAvatarChange={onAvatarChange}
+              avatarPreview={avatarPreview}
+              updatingProfile={updatingProfile}
+              handleUpdateProfile={handleUpdateProfile}
+            />
+          )}
     </>
   );
 }
 
-const ProfileModal = ({ show, onClose, user, isPro, profileName, setProfileName, onAvatarChange, avatarPreview, updatingProfile, handleUpdateProfile }) => {
+const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setProfileName, onAvatarChange, avatarPreview, updatingProfile, handleUpdateProfile }) => {
   if (!show) return null;
   const joinedDate = new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  
+  // Update this to your real domain when you deploy!
+  const productionUrl = "https://pixel-vibe.vercel.app"; // Oyage domain eka methana danna
+  const baseUrl = window.location.hostname === 'localhost' ? window.location.origin : productionUrl;
+  const referralLink = `${baseUrl}/?ref=${user.id}`;
+
+  const copyRefLink = () => {
+    navigator.clipboard.writeText(referralLink);
+    alert('Referral link copied to clipboard!');
+  };
   
   return (
     <div 
@@ -987,6 +1040,32 @@ const ProfileModal = ({ show, onClose, user, isPro, profileName, setProfileName,
               <div className={`text-xs font-bold font-['Rajdhani'] uppercase tracking-widest ${isPro ? 'text-yellow-500' : 'text-cyan'}`}>
                 {isPro ? '💎 Pro Member' : 'Free Member'}
               </div>
+            </div>
+            <div className="w-[1px] h-8 bg-white/10 mx-2"></div>
+            <div className="text-center">
+              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Vibe Coins</div>
+              <div className="text-xs font-bold text-pink-500 font-['Rajdhani'] uppercase tracking-widest flex items-center gap-1 justify-center">
+                🪙 {userCoins}
+              </div>
+            </div>
+          </div>
+
+          {/* Referral Link Section */}
+          <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Share & Earn (2 Coins/Ref)</div>
+              <div className="text-[10px] text-[#00f5d4] font-bold font-['Rajdhani']">ACTIVE</div>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1 bg-black/40 p-3 rounded-xl border border-white/5 overflow-hidden text-ellipsis whitespace-nowrap text-[10px] font-mono text-gray-400">
+                {referralLink}
+              </div>
+              <button 
+                onClick={copyRefLink}
+                className="px-4 bg-cyan/10 hover:bg-cyan/20 text-cyan border border-cyan/30 rounded-xl transition-all font-bold text-[10px]"
+              >
+                COPY
+              </button>
             </div>
           </div>
 
