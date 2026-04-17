@@ -315,7 +315,7 @@ function Home() {
       <nav id="navbar" className={scrolled ? 'scrolled' : ''}>
         <div className="logo cursor-pointer flex items-center gap-3" onClick={() => { navigate('/'); window.scrollTo({top: 0, behavior: 'smooth'}); }}>
           <img src="/logo.png" alt="Pixel Vibe Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
-          <span>PIXEL VIBE</span>
+          <span className="font-['Orbitron'] font-black text-sm md:text-xl tracking-widest text-white">PIXEL VIBE</span>
         </div>
         <div className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           <a href="#hero" onClick={() => setMobileMenuOpen(false)}>Home</a>
@@ -323,55 +323,60 @@ function Home() {
           <a href="#services" onClick={() => setMobileMenuOpen(false)}>Services</a>
           <a href="#about" onClick={() => setMobileMenuOpen(false)}>About</a>
           <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
-          <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
-          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <a href="#contact" className="nav-cta" onClick={() => setMobileMenuOpen(false)}>Hire Me</a>
-            {user && (
-              <div 
-                className="nav-profile cursor-pointer" 
-                onClick={() => setShowProfile(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', paddingLeft: '0.8rem', borderLeft: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
-              >
-                <div className={`user-avatar overflow-hidden relative ${isPro ? 'ring-2 ring-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : ''}`} style={{ 
-                  width: '36px', height: '36px', borderRadius: '10px', 
-                  background: isPro ? 'linear-gradient(135deg, #fbbf24, #d97706)' : 'linear-gradient(135deg, var(--cyan), var(--blue))',
-                  display: 'flex', alignItems: 'center', justifyCenter: 'center',
-                  fontSize: '1rem', fontWeight: '900', color: isPro ? '#000' : '#000',
-                  fontFamily: "'Orbitron', sans-serif"
-                }}>
-                  {isPro && (
-                    <div className="absolute top-0 right-0 w-2 h-2 bg-yellow-400 rounded-full border border-black z-10"></div>
-                  )}
-                  {user.user_metadata?.avatar_url ? (
-                    <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <span style={{ margin: 'auto' }}>{(user.user_metadata?.full_name || user.email)?.[0].toUpperCase()}</span>
-                  )}
-                </div>
-                <div className="user-info hide-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: '800', fontFamily: "'Rajdhani', sans-serif", color: '#fff', letterSpacing: '1px' }}>
-                    {user.user_metadata?.full_name?.split(' ')[0] || 'CREATOR'}
-                  </span>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setShowProfile(true); }}
-                      style={{ background: 'none', border: 'none', padding: 0, color: 'var(--cyan)', fontSize: '0.6rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif" }}
-                    >EDIT</button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); supabase.auth.signOut(); }} 
-                      style={{ background: 'none', border: 'none', padding: 0, color: 'var(--pink)', fontSize: '0.6rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif" }}
-                    >LOGOUT</button>
-                  </div>
+          <a href="#contact" className="md:hidden mt-4 py-3 bg-cyan text-black text-center font-bold rounded-xl" onClick={() => setMobileMenuOpen(false)}>HIRE ME</a>
+        </div>
+
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="hidden md:flex items-center">
+            <a href="#contact" className="nav-cta">Hire Me</a>
+          </div>
+
+          {user && (
+            <div 
+              className="nav-profile cursor-pointer" 
+              onClick={() => setShowProfile(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }}
+            >
+              <div className={`user-avatar overflow-hidden relative ${isPro ? 'ring-2 ring-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : ''}`} style={{ 
+                width: '32px', height: '32px', borderRadius: '8px', 
+                background: isPro ? 'linear-gradient(135deg, #fbbf24, #d97706)' : 'linear-gradient(135deg, var(--cyan), var(--blue))',
+                display: 'flex', alignItems: 'center', justifyCenter: 'center',
+                fontSize: '0.9rem', fontWeight: '900', color: '#000',
+                fontFamily: "'Orbitron', sans-serif"
+              }}>
+                {isPro && (
+                  <div className="absolute top-0 right-0 w-2 h-2 bg-yellow-400 rounded-full border border-black z-10"></div>
+                )}
+                {user.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span style={{ margin: 'auto' }}>{(user.user_metadata?.full_name || user.email)?.[0].toUpperCase()}</span>
+                )}
+              </div>
+              <div className="user-info hide-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: '800', fontFamily: "'Rajdhani', sans-serif", color: '#fff', letterSpacing: '1px', lineHeight: '1' }}>
+                  {user.user_metadata?.full_name?.split(' ')[0] || 'CREATOR'}
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setShowProfile(true); }}
+                    style={{ background: 'none', border: 'none', padding: 0, color: 'var(--cyan)', fontSize: '0.55rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif" }}
+                  >EDIT</button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); supabase.auth.signOut(); }} 
+                    style={{ background: 'none', border: 'none', padding: 0, color: 'var(--pink)', fontSize: '0.55rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif" }}
+                  >LOGOUT</button>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
           <button 
             className="mobile-nav-toggle" 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            style={{ fontSize: '1.5rem', marginLeft: '1rem' }}
+            style={{ fontSize: '1.2rem', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}
           >
-            {mobileMenuOpen ? <X size={32} /> : <Menu size={32} />}
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </nav>
