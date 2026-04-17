@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase/config';
 import { 
-  LayoutDashboard, Image, Settings, MessageSquare, 
-  Tag, CreditCard, Plus, Edit2, Trash2, Search, Bell, Menu, X
+  LayoutDashboard, Image as ImageIcon, Settings, MessageSquare, 
+  Tag, CreditCard, Plus, Edit2, Trash2, Search, Bell, Menu, X,
+  Users, RefreshCw
 } from 'lucide-react';
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState('portfolio');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, msg: '' });
 
@@ -21,29 +24,64 @@ export default function Admin() {
   const [uploading, setUploading] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
-  // Load from Firebase
   useEffect(() => {
     loadPortfolio();
+    fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (error) {
+         if (error.code === 'PGRST116' || error.message.includes('not found')) {
+            alert('CRITICAL: "profiles" table not found in Supabase! Please create it in your Supabase dashboard.');
+         }
+         throw error;
+      }
+      setUsers(data || []);
+    } catch (e) {
+      console.error('Error fetching users:', e);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleStatusChange = async (userId, newStatus) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: newStatus })
+        .eq('id', userId);
+      
+      if (error) throw error;
+      
+      setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus } : u));
+      showToast(`User status updated to ${newStatus}!`);
+    } catch (e) {
+      console.error('Error updating status:', e);
+      showToast('Error updating status');
+    }
+  };
 
   const loadPortfolio = async () => {
     try {
-      // 1. Load Portfolio
       const { data: pData, error: pError } = await supabase.from('portfolio').select('*');
       if (pError) throw pError;
       setPortfolio(pData || []);
 
-      // 2. Load Messages
       const { data: mData, error: mError } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
       if (mError) throw mError;
       setMessages(mData || []);
 
-      // 3. Calc Stats
       const totalViews = (pData || []).reduce((acc, item) => acc + (parseInt(item.views) || 0), 0);
       setStats({
         views: totalViews,
         inquiries: mData?.length || 0,
-        services: 6 // Based on the 6 main service categories
+        services: 6
       });
 
       setLoading(false);
@@ -78,7 +116,6 @@ export default function Admin() {
       }
 
       if (editingItem) {
-        // Update
         const { error } = await supabase
           .from('portfolio')
           .update({
@@ -92,7 +129,6 @@ export default function Admin() {
           .eq('id', editingItem.id);
         if (error) throw error;
       } else {
-        // Insert
         const { error } = await supabase.from('portfolio').insert([{
           title: newItem.title,
           cat: newItem.cat,
@@ -147,10 +183,11 @@ export default function Admin() {
 
   const tabs = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'portfolio', icon: Image, label: 'Portfolio Items' },
+    { id: 'portfolio', icon: ImageIcon, label: 'Portfolio Items' },
     { id: 'services', icon: Tag, label: 'Services' },
     { id: 'pricing', icon: CreditCard, label: 'Pricing Plans' },
     { id: 'messages', icon: MessageSquare, label: 'Inquiries' },
+    { id: 'users', icon: Users, label: 'User Management' },
   ];
 
   return (
@@ -161,19 +198,16 @@ export default function Admin() {
         input, textarea { cursor: text !important; }
       `}</style>
       
-      {/* TOAST NOTIFICATION */}
       <div className={`fixed bottom-6 right-6 z-[100] transform transition-all duration-500 flex items-center gap-3 px-6 py-4 rounded-xl shadow-[0_10px_40px_rgba(0,245,212,0.2)] bg-[#0d0d22] border border-[#00f5d4]/30 ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
         <div className="w-8 h-8 rounded-full bg-[#00f5d4]/10 flex items-center justify-center text-[#00f5d4]">✓</div>
         <span className="font-['Rajdhani'] font-bold tracking-wider text-white text-lg">{toast.msg}</span>
       </div>
 
-      {/* SIDEBAR */}
       <div className={`fixed inset-y-0 left-0 bg-[#0a0a1f] border-r border-[#00f5d4]/20 w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-20 md:relative md:translate-x-0`}>
         <div className="p-6">
           <div 
             onClick={() => window.location.href = '/'}
             className="flex flex-col items-center text-center mb-10 cursor-pointer group"
-            style={{ cursor: 'pointer' }}
           >
             <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain mb-3 group-hover:scale-110 transition-transform" />
             <div className="font-['Orbitron'] font-black text-xl tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-[#00f5d4] to-[#f72585]">
@@ -427,6 +461,91 @@ export default function Admin() {
               </div>
             </div>
           )}
+
+          {/* USERS TAB - FIXED */}
+        {activeTab === 'users' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-center bg-[#0d0d22] p-8 rounded-3xl border border-white/5 shadow-2xl">
+              <div>
+                <h2 className="text-3xl font-['Orbitron'] font-black text-white">USER <span className="text-yellow-500">WORKSPACE</span></h2>
+                <p className="text-gray-500 font-['Rajdhani'] text-xs font-bold uppercase tracking-[4px] mt-2">Manage creator memberships and status overrides</p>
+              </div>
+              <button 
+                onClick={fetchUsers}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-[#00f5d4] transition-all border border-[#00f5d4]/20 font-['Rajdhani'] font-bold tracking-widest text-xs"
+              >
+                <RefreshCw size={18} className={loadingUsers ? 'animate-spin' : ''} />
+                REFRESH DATABASE
+              </button>
+            </div>
+
+            <div className="bg-[#0d0d22] rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/5">
+                    <th className="px-8 py-6 text-[11px] font-black text-gray-500 uppercase tracking-[3px]">IDENTITY</th>
+                    <th className="px-8 py-6 text-[11px] font-black text-gray-500 uppercase tracking-[3px]">JOINED DATE</th>
+                    <th className="px-8 py-6 text-[11px] font-black text-gray-500 uppercase tracking-[3px] text-center">PRIVILEGE</th>
+                    <th className="px-8 py-6 text-[11px] font-black text-gray-500 uppercase tracking-[3px] text-right">OPERATIONS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {users.map((user) => (
+                    <tr key={user.id} className="hover:bg-white/[0.03] transition-all group">
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                          <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center font-['Orbitron'] font-black text-black text-sm transition-all duration-500 ${user.status === 'pro' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-[0_0_25px_rgba(234,179,8,0.4)] rotate-3' : 'bg-gradient-to-br from-cyan to-blue -rotate-3'}`}>
+                            {user.avatar_url ? (
+                              <img src={user.avatar_url} className="w-full h-full object-cover rounded-2xl" alt="P" />
+                            ) : (
+                              user.full_name?.[0]?.toUpperCase() || 'U'
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-white font-black font-['Rajdhani'] tracking-[2px] text-base uppercase">{user.full_name || 'ANONYMOUS'}</div>
+                            <div className="text-gray-500 font-['Rajdhani'] text-[11px] font-medium">{user.email || 'No email associated'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-gray-400 font-bold font-['Rajdhani'] text-xs uppercase tracking-widest leading-none">
+                        {new Date(user.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-8 py-6 text-center">
+                        <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[2.5px] border ${user.status === 'pro' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' : 'bg-cyan/10 text-cyan border-cyan/30'}`}>
+                          {user.status === 'pro' ? '💎 PRO' : 'FREE'}
+                        </span>
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                        <div className="flex justify-end">
+                          {user.status !== 'pro' ? (
+                            <button 
+                              onClick={() => handleStatusChange(user.id, 'pro')}
+                              className="px-6 py-3 rounded-xl bg-yellow-500 text-black font-['Rajdhani'] font-black text-[10px] uppercase tracking-[2px] hover:scale-105 active:scale-95 transition-all shadow-[0_10px_30px_rgba(234,179,8,0.2)]"
+                            >
+                              GRANT PRO ACCESS
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => handleStatusChange(user.id, 'free')}
+                              className="px-6 py-3 rounded-xl bg-white/5 text-gray-500 hover:text-white font-['Rajdhani'] font-black text-[10px] uppercase tracking-[2px] transition-all border border-white/5 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
+                            >
+                              REVOKE ACCESS
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {users.length === 0 && (
+                    <tr>
+                      <td colSpan="4" className="px-8 py-20 text-center text-gray-600 font-['Rajdhani'] uppercase tracking-[4px] text-sm">No creators found in the data grid.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
           {/* Under Construction handling for other tabs */}
           {['services', 'pricing'].includes(activeTab) && (

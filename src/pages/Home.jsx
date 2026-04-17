@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, Menu, Edit2 } from 'lucide-react';
 import '../index.css';
 import { supabase } from '../supabase/config';
 
@@ -8,6 +8,12 @@ function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [filter, setFilter] = useState('all');
   const [notif, setNotif] = useState({ show: false, msg: '' });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [newAvatar, setNewAvatar] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
   
   const cursorRef = useRef(null);
   const ringRef = useRef(null);
@@ -18,6 +24,8 @@ function Home() {
   const [portfolioItems, setPortfolioItems] = useState([]);
   const [loadingPortfolio, setLoadingPortfolio] = useState(true);
   const [user, setUser] = useState(null);
+  const [userStatus, setUserStatus] = useState('free');
+  const isPro = userStatus === 'pro';
   const [selectedItem, setSelectedItem] = useState(null);
   const [orderChoice, setOrderChoice] = useState(null); // { serviceTitle, color }
   const [orderQty, setOrderQty] = useState(1);
@@ -35,7 +43,39 @@ function Home() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
+      if (user) {
+        if (user.user_metadata?.full_name) setProfileName(user.user_metadata.full_name);
+        syncProfile(user);
+      }
     });
+
+    const syncProfile = async (u) => {
+      try {
+        // First check if profile exists and get status
+        const { data: profile, error: fetchError } = await supabase
+          .from('profiles')
+          .select('status')
+          .eq('id', u.id)
+          .single();
+        
+        if (profile) setUserStatus(profile.status || 'free');
+
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: u.id,
+            email: u.email,
+            full_name: u.user_metadata?.full_name || u.email?.split('@')[0],
+            avatar_url: u.user_metadata?.avatar_url || null,
+            status: profile?.status || u.user_metadata?.status || 'free',
+            updated_at: new Date()
+          }, { onConflict: 'id' });
+        
+        if (error) console.error('Sync error:', error);
+      } catch (e) {
+        console.error('Profile sync failed:', e);
+      }
+    };
 
     const fetchPortfolio = async () => {
       try {
@@ -205,6 +245,56 @@ function Home() {
     }, 3500);
   };
 
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setUpdatingProfile(true);
+    try {
+      let avatarUrl = user.user_metadata?.avatar_url;
+
+      if (newAvatar) {
+        const fileExt = newAvatar.name.split('.').pop();
+        const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('portfolio')
+          .upload(`avatars/${fileName}`, newAvatar, { upsert: true });
+
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('portfolio')
+          .getPublicUrl(`avatars/${fileName}`);
+        
+        avatarUrl = publicUrl;
+      }
+
+      const { data, error } = await supabase.auth.updateUser({
+        data: { 
+          full_name: profileName,
+          avatar_url: avatarUrl 
+        }
+      });
+
+      if (error) throw error;
+      
+      setUser(data.user);
+      setShowProfile(false);
+      triggerNotify('Profile updated successfully!');
+    } catch (e) {
+      console.error('Update error:', e);
+      triggerNotify('Error updating profile: ' + e.message);
+    } finally {
+      setUpdatingProfile(false);
+    }
+  };
+
+  const onAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewAvatar(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
   const filteredPortfolio = filter === 'all' ? portfolioItems : portfolioItems.filter(i => i.cat === filter);
 
   const addToRefs = (el) => {
@@ -227,40 +317,62 @@ function Home() {
           <img src="/logo.png" alt="Pixel Vibe Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
           <span>PIXEL VIBE</span>
         </div>
-        <div className="nav-links">
-          <a href="#hero">Home</a>
-          <a href="#portfolio">Portfolio</a>
-          <a href="#services">Services</a>
-          <a href="#about">About</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#contact">Contact</a>
+        <div className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+          <a href="#hero" onClick={() => setMobileMenuOpen(false)}>Home</a>
+          <a href="#portfolio" onClick={() => setMobileMenuOpen(false)}>Portfolio</a>
+          <a href="#services" onClick={() => setMobileMenuOpen(false)}>Services</a>
+          <a href="#about" onClick={() => setMobileMenuOpen(false)}>About</a>
+          <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+          <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
           <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <a href="#contact" className="nav-cta">Hire Me</a>
+            <a href="#contact" className="nav-cta" onClick={() => setMobileMenuOpen(false)}>Hire Me</a>
             {user && (
-              <div className="nav-profile" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', paddingLeft: '0.8rem', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
-                <div className="user-avatar" style={{ 
+              <div 
+                className="nav-profile cursor-pointer" 
+                onClick={() => setShowProfile(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', paddingLeft: '0.8rem', borderLeft: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+              >
+                <div className={`user-avatar overflow-hidden relative ${isPro ? 'ring-2 ring-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : ''}`} style={{ 
                   width: '36px', height: '36px', borderRadius: '10px', 
-                  background: 'linear-gradient(135deg, var(--cyan), var(--blue))',
+                  background: isPro ? 'linear-gradient(135deg, #fbbf24, #d97706)' : 'linear-gradient(135deg, var(--cyan), var(--blue))',
                   display: 'flex', alignItems: 'center', justifyCenter: 'center',
-                  fontSize: '1rem', fontWeight: '900', color: '#000',
+                  fontSize: '1rem', fontWeight: '900', color: isPro ? '#000' : '#000',
                   fontFamily: "'Orbitron', sans-serif"
                 }}>
-                  <span style={{ margin: 'auto' }}>{(user.user_metadata?.full_name || user.email)?.[0].toUpperCase()}</span>
+                  {isPro && (
+                    <div className="absolute top-0 right-0 w-2 h-2 bg-yellow-400 rounded-full border border-black z-10"></div>
+                  )}
+                  {user.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span style={{ margin: 'auto' }}>{(user.user_metadata?.full_name || user.email)?.[0].toUpperCase()}</span>
+                  )}
                 </div>
                 <div className="user-info hide-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '0.75rem', fontWeight: '800', fontFamily: "'Rajdhani', sans-serif", color: '#fff', letterSpacing: '1px' }}>
                     {user.user_metadata?.full_name?.split(' ')[0] || 'CREATOR'}
                   </span>
-                  <button 
-                    onClick={() => supabase.auth.signOut()} 
-                    style={{ background: 'none', border: 'none', padding: 0, color: 'var(--pink)', fontSize: '0.65rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '1px' }}
-                  >
-                    LOGOUT
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setShowProfile(true); }}
+                      style={{ background: 'none', border: 'none', padding: 0, color: 'var(--cyan)', fontSize: '0.6rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif" }}
+                    >EDIT</button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); supabase.auth.signOut(); }} 
+                      style={{ background: 'none', border: 'none', padding: 0, color: 'var(--pink)', fontSize: '0.6rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif" }}
+                    >LOGOUT</button>
+                  </div>
                 </div>
               </div>
             )}
           </div>
+          <button 
+            className="mobile-nav-toggle" 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{ fontSize: '1.5rem', marginLeft: '1rem' }}
+          >
+            {mobileMenuOpen ? <X size={32} /> : <Menu size={32} />}
+          </button>
         </div>
       </nav>
 
@@ -783,10 +895,135 @@ function Home() {
           </div>
         </div>
       )}
+
+      {user && (
+        <ProfileModal 
+          show={showProfile}
+          onClose={() => setShowProfile(false)}
+          user={user}
+          isPro={isPro}
+          profileName={profileName}
+          setProfileName={setProfileName}
+          onAvatarChange={onAvatarChange}
+          avatarPreview={avatarPreview}
+          updatingProfile={updatingProfile}
+          handleUpdateProfile={handleUpdateProfile}
+        />
+      )}
     </>
   );
 }
 
+const ProfileModal = ({ show, onClose, user, isPro, profileName, setProfileName, onAvatarChange, avatarPreview, updatingProfile, handleUpdateProfile }) => {
+  if (!show) return null;
+  const joinedDate = new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  
+  return (
+    <div 
+      className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-in fade-in duration-300"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[#0a0a1f] border border-cyan/20 p-6 md:p-10 rounded-[2.5rem] w-full max-w-sm md:max-w-md relative z-[3010] shadow-[0_0_100px_rgba(0,245,212,0.15)] animate-in zoom-in-95 duration-500 overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Background Decorative Elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan/10 blur-[60px] rounded-full"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink/10 blur-[60px] rounded-full"></div>
 
+        <div className="flex justify-between items-center mb-10 relative z-10">
+          <div className="flex flex-col">
+            <h3 className="text-xl md:text-2xl font-['Orbitron'] font-black text-white tracking-widest">CREATOR <span className="text-cyan">PROFILE</span></h3>
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[4px]">Verified Workspace</span>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all border border-white/5"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleUpdateProfile} className="space-y-8 relative z-10">
+          {/* Profile Image with Glow */}
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative group cursor-pointer">
+              <div className={`absolute -inset-1 rounded-[2.2rem] blur opacity-40 group-hover:opacity-100 transition duration-500 ${isPro ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-cyan to-blue'}`}></div>
+              <div className={`relative w-24 h-24 md:w-28 md:h-28 rounded-[2rem] bg-[#0d0d22] border-2 flex items-center justify-center overflow-hidden ${isPro ? 'border-yellow-500/50' : 'border-white/10'}`}>
+                {avatarPreview || user.user_metadata?.avatar_url ? (
+                  <img src={avatarPreview || user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl md:text-4xl text-cyan/70 font-black font-['Orbitron']">{(profileName || user.email)?.[0].toUpperCase()}</span>
+                )}
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300 backdrop-blur-sm">
+                  <div className="flex flex-col items-center gap-1">
+                    <Edit2 size={24} className="text-white" />
+                    <span className="text-[8px] font-bold text-white uppercase tracking-widest">EDIT</span>
+                  </div>
+                </div>
+              </div>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={onAvatarChange}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* User Stats Plate */}
+          <div className="grid grid-cols-2 gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+            <div className="text-center border-r border-white/5">
+              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Joined</div>
+              <div className="text-xs font-bold text-white font-['Rajdhani'] uppercase tracking-widest">{joinedDate}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Status</div>
+              <div className={`text-xs font-bold font-['Rajdhani'] uppercase tracking-widest ${isPro ? 'text-yellow-500' : 'text-cyan'}`}>
+                {isPro ? '💎 Pro Member' : 'Free Member'}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="form-group">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[3px] mb-3 block">Display Identity</label>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={profileName}
+                  onChange={e => setProfileName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-['Rajdhani'] font-bold tracking-widest focus:outline-none focus:border-cyan/50 focus:bg-white/10 transition-all"
+                  placeholder="Enter creator name..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Solid Submit Button - No Glow */}
+          <button 
+            type="submit" 
+            disabled={updatingProfile}
+            className="w-full relative group transition-transform active:scale-95"
+          >
+            <div className="bg-[#00f5d4] py-4 rounded-xl flex items-center justify-center gap-3 border border-[#00f5d4]">
+              <span className="text-black font-black font-['Rajdhani'] tracking-[4px] uppercase text-sm">
+                {updatingProfile ? 'SYNCING...' : 'SAVE PROFILE'}
+              </span>
+              {!updatingProfile && <span className="text-black text-xl">→</span>}
+            </div>
+          </button>
+        </form>
+
+        <button 
+          onClick={() => { supabase.auth.signOut(); onClose(); }}
+          className="w-full mt-8 text-center text-pink/40 hover:text-pink transition-colors font-bold font-['Rajdhani'] tracking-[3px] uppercase text-[9px]"
+        >
+          Terminate current session
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default Home;

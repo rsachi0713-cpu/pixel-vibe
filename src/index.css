@@ -478,6 +478,180 @@ footer { background: var(--dark); border-top: 1px solid rgba(0,245,212,0.08); pa
 @keyframes scrollLine { 0% { opacity: 0; transform: scaleY(0); transform-origin: top; } 50% { opacity: 1; } 100% { opacity: 0; transform: scaleY(1); transform-origin: top; } }
 .scroll-text { font-family: 'Rajdhani', sans-serif; font-size: 0.7rem; letter-spacing: 3px; color: rgba(255,255,255,0.3); text-transform: uppercase; }
 
+/* 
+==========================================================================
+   RESPONSIVE OVERRIDES
+========================================================================== 
+*/
+
+@media (max-width: 1024px) {
+  #cursor, #cursor-ring { display: none !important; }
+  body.has-custom-cursor, body.has-custom-cursor * { cursor: auto !important; }
+  
+  nav { padding: 0 1.5rem; }
+  .nav-links { display: none; } /* Hide regular links, we'll implement a mobile toggle */
+  
+  .hero-content { flex-direction: column; gap: 3rem; text-align: center; padding: 0 1.5rem; }
+  .hero-left { width: 100%; }
+  .hero-right { width: 100%; flex: none; grid-template-columns: 1fr 1fr; }
+  .hero-sub { margin: 1.5rem auto 2.5rem; }
+  .hero-btns { justify-content: center; width: 100%; }
+  
+  #about { padding: 80px 1.5rem; }
+  .about-inner { flex-direction: column; gap: 4rem; text-align: center; }
+  .about-visual { flex: none; width: 100%; max-width: 380px; }
+  .about-img-frame { width: 100%; height: 400px; }
+  .about-text h2 { text-align: center; }
+  .about-skills { justify-content: center; }
+  
+  #portfolio, #services, #pricing, #contact { padding: 80px 1.5rem; }
+}
+
+@media (max-width: 768px) {
+  .hero-title .line1, .hero-title .line2 { font-size: 3rem; }
+  .hero-title .line3 { font-size: 1.5rem; }
+  
+  .portfolio-grid { grid-template-columns: 1fr; }
+  .services-grid { 
+    grid-template-columns: repeat(2, 1fr) !important; 
+    gap: 12px !important; 
+  }
+  
+  .s-card { 
+    padding: 20px 12px !important; 
+    text-align: center;
+    border-radius: 16px !important;
+  }
+  
+  .s-icon { 
+    font-size: 1.8rem !important; 
+    margin-bottom: 8px !important; 
+  }
+  
+  .s-title { 
+    font-size: 0.85rem !important; 
+    margin-bottom: 6px !important;
+    line-height: 1.2 !important;
+    letter-spacing: 1px !important;
+  }
+  
+  .s-desc { 
+    display: block !important; 
+    font-size: 0.65rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 12px !important;
+    opacity: 0.7 !important;
+  }
+  
+  .s-footer { 
+    flex-direction: column !important; 
+    gap: 6px !important; 
+    align-items: center !important;
+  }
+  
+  .s-price { font-size: 0.75rem !important; }
+  
+  .s-btn { 
+    width: 100% !important; 
+    padding: 6px 2px !important; 
+    font-size: 0.55rem !important; 
+    letter-spacing: 0.5px !important;
+  }
+  .pricing-grid { 
+    grid-template-columns: repeat(2, 1fr) !important; 
+    gap: 12px !important; 
+    max-width: 100% !important;
+  }
+  
+  .pr-card { 
+    padding: 24px 12px !important; 
+    text-align: center;
+    border-radius: 16px !important;
+  }
+  
+  /* Make the 3rd card (Standard) take full width in its own row */
+  .pr-card:nth-child(3) {
+    grid-column: span 2 !important;
+    max-width: 100% !important;
+  }
+  
+  .pr-card.featured { margin-top: 0 !important; }
+  
+  .pr-badge { 
+    font-size: 0.5rem !important; 
+    padding: 3px 8px !important; 
+    top: -10px !important; 
+  }
+  
+  .pr-price { 
+    font-size: 1.5rem !important; 
+    margin-bottom: 4px !important; 
+  }
+  
+  .pr-period { 
+    font-size: 0.6rem !important; 
+    margin-bottom: 15px !important; 
+  }
+  
+  .pr-features { display: none !important; }
+  
+  .pr-card .btn-ghost, .pr-card .btn-primary {
+    padding: 10px 8px !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 1px !important;
+    border-width: 1.5px !important;
+  }
+  
+  .footer-inner { grid-template-columns: 1fr; text-align: center; gap: 2rem; }
+  .footer-brand p { margin: 0 auto; }
+  .socials { justify-content: center; }
+  .footer-bottom { justify-content: center; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .hero-title .line1, .hero-title .line2 { font-size: 2.2rem; }
+  .hero-right { grid-template-columns: 1fr; }
+  .hero-btns { flex-direction: column; }
+  .btn-primary, .btn-ghost { width: 100%; text-align: center; }
+  
+  .pr-price { font-size: 2.5rem; }
+  .contact-form { padding: 24px; }
+}
+
+/* Mobile Nav Toggle */
+.mobile-nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  z-index: 1100;
+}
+
+@media (max-width: 1024px) {
+  .mobile-nav-toggle { display: block; }
+  
+  .nav-links.mobile-open {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: var(--dark);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    z-index: 1050;
+    animation: fadeIn 0.3s forwards;
+  }
+  
+  .nav-links.mobile-open a {
+    font-size: 1.5rem;
+  }
+}
+
 /* Animations */
 .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
 .reveal.visible { opacity: 1; transform: none; }
