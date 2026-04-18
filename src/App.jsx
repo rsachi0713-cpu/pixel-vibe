@@ -11,15 +11,16 @@ function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // 1. Capture Referral Code from URL immediately (Synchronous)
+  // Doing this before useEffect to prevent losing it during Navigate redirects
+  const urlParams = new URLSearchParams(window.location.search);
+  const refCode = urlParams.get('ref');
+  if (refCode) {
+    localStorage.setItem('pixel_vibe_ref', refCode);
+    console.log('Referral code captured officially:', refCode);
+  }
+
   useEffect(() => {
-    // 1. Capture Referral Code from URL globally
-    const urlParams = new URLSearchParams(window.location.search);
-    const refCode = urlParams.get('ref');
-    if (refCode) {
-      localStorage.setItem('pixel_vibe_ref', refCode);
-      console.log('Referral code captured:', refCode);
-    }
-    
     // 2. Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);

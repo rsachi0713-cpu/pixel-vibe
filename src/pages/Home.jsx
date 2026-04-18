@@ -44,12 +44,6 @@ function Home() {
 
   useEffect(() => {
     // 1. Capture Referral Code from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const refCode = urlParams.get('ref');
-    if (refCode) {
-      localStorage.setItem('pixel_vibe_ref', refCode);
-    }
-
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (user) {
@@ -104,6 +98,24 @@ function Home() {
           // EXISTING USER - Just sync basic info
           setUserStatus(profile.status || 'free');
           setUserCoins(profile.coins || 0);
+
+          // NEW: Handle referral if profile already exists but has no referrer 
+          // (Common if a DB trigger creates the profile row automatically)
+          if (referrerId && referrerId !== u.id && !profile.referred_by) {
+            const { error: updateRefErr } = await supabase
+              .from('profiles')
+              .update({ referred_by: referrerId })
+              .eq('id', u.id);
+            
+            if (!updateRefErr) {
+              await supabase.rpc('increment_coins', { 
+                user_id: referrerId, 
+                amount: 2 
+              });
+              console.log("Referrer rewarded via existing profile sync");
+              localStorage.removeItem('pixel_vibe_ref');
+            }
+          }
 
           await supabase
             .from('profiles')
@@ -977,9 +989,8 @@ const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setP
   if (!show) return null;
   const joinedDate = new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   
-  // Update this to your real domain when you deploy!
-  const productionUrl = "https://pixel-vibe.vercel.app"; // Oyage domain eka methana danna
-  const baseUrl = window.location.hostname === 'localhost' ? window.location.origin : productionUrl;
+  // Automatically uses your current production or local domain
+  const baseUrl = window.location.origin;
   const referralLink = `${baseUrl}/?ref=${user.id}`;
 
   const copyRefLink = () => {
