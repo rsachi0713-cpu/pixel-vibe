@@ -23,6 +23,7 @@ function Home() {
 
   const [portfolioItems, setPortfolioItems] = useState([]);
   const [loadingPortfolio, setLoadingPortfolio] = useState(true);
+  const [rotationOffset, setRotationOffset] = useState(0);
   const [user, setUser] = useState(null);
   const [userStatus, setUserStatus] = useState('free');
   const [userCoins, setUserCoins] = useState(0);
@@ -133,6 +134,13 @@ function Home() {
     fetchPortfolio();
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setRotationOffset(prev => prev + 1);
+    }, 60000); // Rotate items every 1 minute
+    return () => clearInterval(timer);
+  }, []);
+
   const getCount = (cat) => {
     return portfolioItems.filter(item => item.cat === cat).length;
   };
@@ -229,7 +237,7 @@ function Home() {
     });
     
     return () => obs.disconnect();
-  }, [filter, portfolioItems]); // Re-run when filter or data changes
+  }, [filter, portfolioItems, rotationOffset]); // Re-run when filter, data, or rotation changes
 
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -338,6 +346,9 @@ function Home() {
   };
 
   const filteredPortfolio = filter === 'all' ? portfolioItems : portfolioItems.filter(i => i.cat === filter);
+  const displayedPortfolio = filteredPortfolio.length > 6 
+    ? Array.from({ length: 6 }, (_, i) => filteredPortfolio[(rotationOffset + i) % filteredPortfolio.length])
+    : filteredPortfolio;
 
   const addToRefs = (el) => {
     if (el && !revealRefs.current.includes(el)) {
@@ -501,7 +512,7 @@ function Home() {
           ) : filteredPortfolio.length === 0 ? (
             <div className="col-span-full py-12 text-center text-gray-500 font-['Rajdhani'] uppercase tracking-widest">No items found. Add some from the Admin Panel!</div>
           ) : (
-            filteredPortfolio.map(item => (
+            displayedPortfolio.map(item => (
               <div key={item.id} className="p-card reveal" ref={addToRefs} onClick={() => setSelectedItem(item)}>
                 <div className="p-card-bg" style={{ 
                   position:'absolute', 
