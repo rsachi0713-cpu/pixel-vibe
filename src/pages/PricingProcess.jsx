@@ -1,13 +1,17 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Check, Zap, Shield, Rocket, Download, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Check, Zap, Shield, Rocket, Download, Eye, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase/config';
+import ProductComments from '../components/ProductComments';
 
 const PricingProcess = () => {
   const { planName } = useParams();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [activeCat, setActiveCat] = useState('all');
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const categories = [
     { id: 'all', label: 'All Designs' },
@@ -20,6 +24,14 @@ const PricingProcess = () => {
   ];
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        supabase.from('profiles').select('status').eq('id', user.id).single()
+          .then(({ data }) => setIsAdmin(data?.status === 'admin'));
+      }
+    });
+
     if (planName?.toLowerCase() === 'free') {
       loadFreeItems();
     } else {
@@ -148,12 +160,20 @@ const PricingProcess = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredItems.map(item => (
                 <div key={item.id} className="group relative bg-[#0a0a1f] border border-white/5 rounded-2xl overflow-hidden hover:border-[#00f5d4]/50 transition-all shadow-2xl">
-                  <div className="aspect-video overflow-hidden">
+                  <div className="aspect-video overflow-hidden relative group/img">
                     <img 
                       src={item.image_url} 
                       alt={item.title} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                     />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                       <button 
+                         onClick={() => setSelectedItem(item)}
+                         className="p-3 bg-white text-black rounded-full transform translate-y-4 group-hover/img:translate-y-0 transition-transform duration-300 shadow-xl"
+                       >
+                         <Eye size={20} />
+                       </button>
+                    </div>
                   </div>
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
@@ -162,12 +182,20 @@ const PricingProcess = () => {
                         <span className="text-[10px] font-['Rajdhani'] font-bold text-[#00f5d4] tracking-[3px] uppercase">{item.cat.replace('-', ' ')}</span>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => handleDownload(item.image_url, item.title)}
-                      className="w-full h-12 flex items-center justify-center gap-2 bg-white/5 hover:bg-[#00f5d4] text-white hover:text-black rounded-xl font-['Rajdhani'] font-black tracking-[4px] uppercase text-xs transition-all border border-white/10 hover:border-[#00f5d4]"
-                    >
-                      <Download size={16} /> Download 4K
-                    </button>
+                    <div className="flex gap-2">
+                       <button 
+                        onClick={() => setSelectedItem(item)}
+                        className="flex-1 h-12 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white rounded-xl font-['Rajdhani'] font-black tracking-[4px] uppercase text-[10px] transition-all border border-white/10"
+                      >
+                        View
+                      </button>
+                      <button 
+                        onClick={() => handleDownload(item.image_url, item.title)}
+                        className="flex-1 h-12 flex items-center justify-center gap-2 bg-[#00f5d4]/10 hover:bg-[#00f5d4] text-[#00f5d4] hover:text-black rounded-xl font-['Rajdhani'] font-black tracking-[4px] uppercase text-[10px] transition-all border border-[#00f5d4]/20 hover:border-[#00f5d4]"
+                      >
+                        <Download size={14} /> 4K
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -179,6 +207,38 @@ const PricingProcess = () => {
             </div>
           )}
         </div>
+
+        {/* LIGHTBOX FOR FREE SAMPLES */}
+        {selectedItem && (
+          <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setSelectedItem(null)}>
+            <button className="absolute top-8 right-8 w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white border border-white/10 transition-all" onClick={() => setSelectedItem(null)}>
+              <X size={24} />
+            </button>
+            <div className="relative w-full max-w-6xl max-h-[90vh] grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in zoom-in-95 duration-500 overflow-y-auto lg:overflow-visible custom-scrollbar" onClick={e => e.stopPropagation()}>
+              <div className="lg:col-span-8 flex flex-col items-center w-full">
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <img src={selectedItem.image_url} alt={selectedItem.title} className="w-full h-full object-contain rounded-2xl shadow-2xl border border-white/5" />
+                </div>
+              </div>
+              <div className="lg:col-span-4 flex flex-col gap-6 w-full h-full">
+                <div className="text-left space-y-4">
+                  <span className="px-4 py-1.5 rounded-full border border-white/10 text-xs font-['Rajdhani'] font-bold tracking-widest uppercase text-[#00f5d4]">
+                    {selectedItem.cat.replace('-', ' ')}
+                  </span>
+                  <h2 className="text-3xl md:text-4xl font-['Orbitron'] font-black text-white leading-tight uppercase">{selectedItem.title}</h2>
+                  <p className="text-gray-400 font-['Rajdhani'] tracking-wide text-sm">Premium free design variation. High quality 4K resolution guaranteed.</p>
+                  <button 
+                    onClick={() => handleDownload(selectedItem.image_url, selectedItem.title)}
+                    className="w-full py-4 bg-[#00f5d4] text-black font-['Orbitron'] font-black text-sm tracking-[4px] uppercase rounded-2xl flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,245,212,0.2)] hover:scale-[1.02] transition-all"
+                  >
+                    <Download size={20} /> Download 4K
+                  </button>
+                </div>
+                <ProductComments productId={selectedItem.id} currentUser={user} isAdmin={isAdmin} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

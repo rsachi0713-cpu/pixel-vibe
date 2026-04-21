@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X, Menu, Edit2 } from 'lucide-react';
 import '../index.css';
 import { supabase } from '../supabase/config';
+import ProductComments from '../components/ProductComments';
 
 function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -14,7 +15,7 @@ function Home() {
   const [profileName, setProfileName] = useState('');
   const [newAvatar, setNewAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
-  
+
   const cursorRef = useRef(null);
   const ringRef = useRef(null);
   const revealRefs = useRef([]);
@@ -28,6 +29,7 @@ function Home() {
   const [userStatus, setUserStatus] = useState('free');
   const [userCoins, setUserCoins] = useState(0);
   const isPro = userStatus === 'pro';
+  const isAdmin = userStatus === 'admin';
   const [selectedItem, setSelectedItem] = useState(null);
   const [orderChoice, setOrderChoice] = useState(null); // { serviceTitle, color }
   const [orderQty, setOrderQty] = useState(1);
@@ -60,13 +62,13 @@ function Home() {
           .select('*')
           .eq('id', u.id)
           .single();
-        
+
         const referrerId = localStorage.getItem('pixel_vibe_ref');
 
         if (!profile) {
           // NEW USER REGISTRATION
           console.log("New user detected, checking for referrer...", referrerId);
-          
+
           const { error: insertError } = await supabase
             .from('profiles')
             .insert({
@@ -83,15 +85,15 @@ function Home() {
           if (!insertError && referrerId && referrerId !== u.id) {
             // Reward the referrer with 2 coins
             console.log("Rewarding referrer:", referrerId);
-            const { error: rpcError } = await supabase.rpc('increment_coins', { 
-              user_id: referrerId, 
-              amount: 2 
+            const { error: rpcError } = await supabase.rpc('increment_coins', {
+              user_id: referrerId,
+              amount: 2
             });
-            
+
             if (rpcError) console.error("RPC Error:", rpcError);
             localStorage.removeItem('pixel_vibe_ref'); // Clear after successful reward
           }
-          
+
           setUserStatus('free');
           setUserCoins(0);
         } else {
@@ -106,11 +108,11 @@ function Home() {
               .from('profiles')
               .update({ referred_by: referrerId })
               .eq('id', u.id);
-            
+
             if (!updateRefErr) {
-              await supabase.rpc('increment_coins', { 
-                user_id: referrerId, 
-                amount: 2 
+              await supabase.rpc('increment_coins', {
+                user_id: referrerId,
+                amount: 2
               });
               console.log("Referrer rewarded via existing profile sync");
               localStorage.removeItem('pixel_vibe_ref');
@@ -158,31 +160,31 @@ function Home() {
   };
 
   const services = [
-    {icon:'🎮',title:'Gaming Thumbnails',desc:'High-impact YouTube & stream thumbnails engineered to stop the scroll and dominate search results.',price:'',color:'var(--cyan)'},
-    {icon:'⚡',title:'Gaming Logos',desc:'Fierce esports logos and team branding that commands respect in any competitive arena.',price:'',color:'var(--pink)'},
-    {icon:'📡',title:'Gaming Social Posts',desc:'Scroll-stopping social content designed to grow your gaming brand across all platforms.',price:'',color:'var(--purple)'},
-    {icon:'🖼️',title:'Normal Thumbnails',desc:'Clean, professional thumbnails for lifestyle, business, and content creators who demand quality.',price:'',color:'#4cc9f0'},
-    {icon:'✦',title:'Normal Logos',desc:'Modern, memorable logos for businesses, personal brands, and creative projects of all kinds.',price:'',color:'#f77f00'},
-    {icon:'📸',title:'Social Media Posts',desc:'Eye-catching posts for Instagram, Twitter, and TikTok that elevate your brand presence.',price:'',color:'#06d6a0'},
+    { icon: '🎮', title: 'Gaming Thumbnails', desc: 'High-impact YouTube & stream thumbnails engineered to stop the scroll and dominate search results.', price: '', color: 'var(--cyan)' },
+    { icon: '⚡', title: 'Gaming Logos', desc: 'Fierce esports logos and team branding that commands respect in any competitive arena.', price: '', color: 'var(--pink)' },
+    { icon: '📡', title: 'Gaming Social Posts', desc: 'Scroll-stopping social content designed to grow your gaming brand across all platforms.', price: '', color: 'var(--purple)' },
+    { icon: '🖼️', title: 'Normal Thumbnails', desc: 'Clean, professional thumbnails for lifestyle, business, and content creators who demand quality.', price: '', color: '#4cc9f0' },
+    { icon: '✦', title: 'Normal Logos', desc: 'Modern, memorable logos for businesses, personal brands, and creative projects of all kinds.', price: '', color: '#f77f00' },
+    { icon: '📸', title: 'Social Media Posts', desc: 'Eye-catching posts for Instagram, Twitter, and TikTok that elevate your brand presence.', price: '', color: '#06d6a0' },
   ];
 
   // Mouse move for custom cursor
   useEffect(() => {
     document.body.classList.add('has-custom-cursor');
-    let mx=0, my=0, rx=0, ry=0;
-    
+    let mx = 0, my = 0, rx = 0, ry = 0;
+
     const handleMouseMove = (e) => {
-      mx = e.clientX; 
+      mx = e.clientX;
       my = e.clientY;
       if (cursorRef.current) {
         cursorRef.current.style.left = mx + 'px';
         cursorRef.current.style.top = my + 'px';
       }
     };
-    
+
     let animId;
     const animRing = () => {
-      rx += (mx - rx) * 0.12; 
+      rx += (mx - rx) * 0.12;
       ry += (my - ry) * 0.12;
       if (ringRef.current) {
         ringRef.current.style.left = rx + 'px';
@@ -190,21 +192,21 @@ function Home() {
       }
       animId = requestAnimationFrame(animRing);
     };
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     animRing();
 
     // Hover effect for interactive elements
     const interactiveElements = document.querySelectorAll('button, a, .mini-card, .p-card, .s-card, .pr-card');
     const handleMouseEnter = () => {
-      if(cursorRef.current) { cursorRef.current.style.width='6px'; cursorRef.current.style.height='6px'; }
-      if(ringRef.current) { ringRef.current.style.width='56px'; ringRef.current.style.height='56px'; ringRef.current.style.opacity='0.8'; }
+      if (cursorRef.current) { cursorRef.current.style.width = '6px'; cursorRef.current.style.height = '6px'; }
+      if (ringRef.current) { ringRef.current.style.width = '56px'; ringRef.current.style.height = '56px'; ringRef.current.style.opacity = '0.8'; }
     };
     const handleMouseLeave = () => {
-      if(cursorRef.current) { cursorRef.current.style.width='12px'; cursorRef.current.style.height='12px'; }
-      if(ringRef.current) { ringRef.current.style.width='36px'; ringRef.current.style.height='36px'; ringRef.current.style.opacity='0.5'; }
+      if (cursorRef.current) { cursorRef.current.style.width = '12px'; cursorRef.current.style.height = '12px'; }
+      if (ringRef.current) { ringRef.current.style.width = '36px'; ringRef.current.style.height = '36px'; ringRef.current.style.opacity = '0.5'; }
     };
-    
+
     interactiveElements.forEach(el => {
       el.addEventListener('mouseenter', handleMouseEnter);
       el.addEventListener('mouseleave', handleMouseLeave);
@@ -236,18 +238,18 @@ function Home() {
   useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
       entries.forEach(e => {
-        if(e.isIntersecting) {
+        if (e.isIntersecting) {
           e.target.classList.add('visible');
         }
       });
     }, { threshold: 0.1 });
-    
+
     revealRefs.current.forEach(el => {
       if (el && !el.classList.contains('visible')) {
         obs.observe(el);
       }
     });
-    
+
     return () => obs.disconnect();
   }, [filter, portfolioItems, rotationOffset]); // Re-run when filter, data, or rotation changes
 
@@ -301,7 +303,7 @@ function Home() {
 
   const triggerNotify = (msg) => {
     setNotif({ show: true, msg });
-    if(notifTimeout.current) clearTimeout(notifTimeout.current);
+    if (notifTimeout.current) clearTimeout(notifTimeout.current);
     notifTimeout.current = setTimeout(() => {
       setNotif(prev => ({ ...prev, show: false }));
     }, 3500);
@@ -321,23 +323,23 @@ function Home() {
           .upload(`avatars/${fileName}`, newAvatar, { upsert: true });
 
         if (uploadError) throw uploadError;
-        
+
         const { data: { publicUrl } } = supabase.storage
           .from('portfolio')
           .getPublicUrl(`avatars/${fileName}`);
-        
+
         avatarUrl = publicUrl;
       }
 
       const { data, error } = await supabase.auth.updateUser({
-        data: { 
+        data: {
           full_name: profileName,
-          avatar_url: avatarUrl 
+          avatar_url: avatarUrl
         }
       });
 
       if (error) throw error;
-      
+
       setUser(data.user);
       setShowProfile(false);
       triggerNotify('Profile updated successfully!');
@@ -358,7 +360,7 @@ function Home() {
   };
 
   const filteredPortfolio = filter === 'all' ? portfolioItems : portfolioItems.filter(i => i.cat === filter);
-  const displayedPortfolio = filteredPortfolio.length > 6 
+  const displayedPortfolio = filteredPortfolio.length > 6
     ? Array.from({ length: 6 }, (_, i) => filteredPortfolio[(rotationOffset + i) % filteredPortfolio.length])
     : filteredPortfolio;
 
@@ -378,13 +380,16 @@ function Home() {
 
       {/* NAV */}
       <nav id="navbar" className={scrolled ? 'scrolled' : ''}>
-        <div className="logo cursor-pointer flex items-center gap-3" onClick={() => { navigate('/'); window.scrollTo({top: 0, behavior: 'smooth'}); }}>
+        <div className="logo cursor-pointer flex items-center gap-3" onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
           <img src="/logo.png" alt="Pixel Vibe Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
           <span className="font-['Orbitron'] font-black text-sm md:text-xl tracking-widest text-white">PIXEL VIBE</span>
         </div>
         <div className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           <a href="#hero" onClick={() => setMobileMenuOpen(false)}>Home</a>
-          <a href="#portfolio" onClick={() => setMobileMenuOpen(false)}>Portfolio</a>
+          <div className="nav-link-wrapper flex items-center gap-1">
+             <a href="#portfolio" onClick={() => setMobileMenuOpen(false)}>Portfolio</a>
+          </div>
+          <a onClick={() => navigate('/community')} className="cursor-pointer">Community</a>
           <a href="#services" onClick={() => setMobileMenuOpen(false)}>Services</a>
           <a href="#about" onClick={() => setMobileMenuOpen(false)}>About</a>
           <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
@@ -397,13 +402,13 @@ function Home() {
           </div>
 
           {user && (
-            <div 
-              className="nav-profile cursor-pointer" 
+            <div
+              className="nav-profile cursor-pointer"
               onClick={() => setShowProfile(true)}
               style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }}
             >
-              <div className={`user-avatar overflow-hidden relative ${isPro ? 'ring-2 ring-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : ''}`} style={{ 
-                width: '32px', height: '32px', borderRadius: '8px', 
+              <div className={`user-avatar overflow-hidden relative ${isPro ? 'ring-2 ring-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : ''}`} style={{
+                width: '32px', height: '32px', borderRadius: '8px',
                 background: isPro ? 'linear-gradient(135deg, #fbbf24, #d97706)' : 'linear-gradient(135deg, var(--cyan), var(--blue))',
                 display: 'flex', alignItems: 'center', justifyCenter: 'center',
                 fontSize: '0.9rem', fontWeight: '900', color: '#000',
@@ -423,12 +428,12 @@ function Home() {
                   {user.user_metadata?.full_name?.split(' ')[0] || 'CREATOR'}
                 </span>
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); setShowProfile(true); }}
                     style={{ background: 'none', border: 'none', padding: 0, color: 'var(--cyan)', fontSize: '0.55rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif" }}
                   >EDIT</button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); supabase.auth.signOut(); }} 
+                  <button
+                    onClick={(e) => { e.stopPropagation(); supabase.auth.signOut(); }}
                     style={{ background: 'none', border: 'none', padding: 0, color: 'var(--pink)', fontSize: '0.55rem', fontWeight: '700', cursor: 'pointer', textAlign: 'left', fontFamily: "'Rajdhani', sans-serif" }}
                   >LOGOUT</button>
                 </div>
@@ -436,8 +441,8 @@ function Home() {
             </div>
           )}
 
-          <button 
-            className="mobile-nav-toggle" 
+          <button
+            className="mobile-nav-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             style={{ fontSize: '1.2rem', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}
           >
@@ -465,30 +470,30 @@ function Home() {
             </h1>
             <p className="hero-sub">Premium gaming & creative designs crafted to dominate. Thumbnails, logos, overlays, social posts — built to convert and built to last.</p>
             <div className="hero-btns">
-              <button className="btn-primary" onClick={() => document.getElementById('portfolio').scrollIntoView({behavior:'smooth'})}>View My Work →</button>
-              <button className="btn-ghost" onClick={() => document.getElementById('contact').scrollIntoView({behavior:'smooth'})}>Hire Me</button>
+              <button className="btn-primary" onClick={() => document.getElementById('portfolio').scrollIntoView({ behavior: 'smooth' })}>View My Work →</button>
+              <button className="btn-ghost" onClick={() => document.getElementById('contact').scrollIntoView({ behavior: 'smooth' })}>Hire Me</button>
             </div>
           </div>
           <div className="hero-right">
             <div className="mini-card mc1">
               <span className="mc-icon">🎮</span>
               <div className="mc-label">Gaming Thumbs</div>
-              <div className="mc-sub" style={{color: 'var(--cyan)'}}>{getCount('gaming-thumb')} Designs</div>
+              <div className="mc-sub" style={{ color: 'var(--cyan)' }}>{getCount('gaming-thumb')} Designs</div>
             </div>
             <div className="mini-card mc2">
               <span className="mc-icon">⚡</span>
               <div className="mc-label">Gaming Logos</div>
-              <div className="mc-sub" style={{color: 'var(--pink)'}}>{getCount('gaming-logo')} Designs</div>
+              <div className="mc-sub" style={{ color: 'var(--pink)' }}>{getCount('gaming-logo')} Designs</div>
             </div>
             <div className="mini-card mc3">
               <span className="mc-icon">📡</span>
               <div className="mc-label">Social Posts</div>
-              <div className="mc-sub" style={{color: 'var(--purple)'}}>{getCount('gaming-post')} Designs</div>
+              <div className="mc-sub" style={{ color: 'var(--purple)' }}>{getCount('gaming-post')} Designs</div>
             </div>
             <div className="mini-card mc4">
               <span className="mc-icon">✦</span>
               <div className="mc-label">Normal Logos</div>
-              <div className="mc-sub" style={{color: 'var(--blue)'}}>{getCount('normal-logo')} Designs</div>
+              <div className="mc-sub" style={{ color: 'var(--blue)' }}>{getCount('normal-logo')} Designs</div>
             </div>
           </div>
         </div>
@@ -501,12 +506,12 @@ function Home() {
       {/* PORTFOLIO */}
       <section id="portfolio">
         <div className="sec-header reveal" ref={addToRefs}>
-          <span className="sec-tag" style={{color: 'var(--cyan)'}}>My Work</span>
+          <span className="sec-tag" style={{ color: 'var(--cyan)' }}>My Work</span>
           <div className="sec-title">Design <span className="glow-cyan">Portfolio</span></div>
         </div>
         <div className="filter-bar reveal" ref={addToRefs}>
-          <button 
-            className={`filter-btn ${filter === 'all' ? 'on' : 'off'}`} 
+          <button
+            className={`filter-btn ${filter === 'all' ? 'on' : 'off'}`}
             style={filter === 'all' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}}
             onClick={() => setFilter('all')}
           >All</button>
@@ -517,7 +522,7 @@ function Home() {
           <button className={`filter-btn ${filter === 'normal-logo' ? 'on' : 'off'}`} style={filter === 'normal-logo' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('normal-logo')}>Normal Logos</button>
           <button className={`filter-btn ${filter === 'normal-post' ? 'on' : 'off'}`} style={filter === 'normal-post' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('normal-post')}>Normal Posts</button>
         </div>
-        
+
         <div className="portfolio-grid" id="portfolioGrid">
           {loadingPortfolio ? (
             <div className="col-span-full py-12 text-center text-gray-500 font-['Rajdhani'] uppercase tracking-widest animate-pulse">Loading amazing designs...</div>
@@ -525,21 +530,34 @@ function Home() {
             <div className="col-span-full py-12 text-center text-gray-500 font-['Rajdhani'] uppercase tracking-widest">No items found. Add some from the Admin Panel!</div>
           ) : (
             displayedPortfolio.map(item => (
-              <div key={item.id} className="p-card reveal" ref={addToRefs} onClick={() => setSelectedItem(item)}>
-                <div className="p-card-bg" style={{ 
-                  position:'absolute', 
-                  inset:0, 
+              <div key={item.id} className="p-card reveal watermark-container" ref={addToRefs} onClick={() => setSelectedItem(item)}>
+                <div className="p-card-bg" style={{
+                  position: 'absolute',
+                  inset: 0,
                   background: item.bg || `linear-gradient(135deg, ${item.color}20, #0a0a1f)`,
                   backgroundImage: item.image_url ? `url(${item.image_url})` : undefined,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }}></div>
+
+                {!item.is_free && (
+                  <>
+                    <div className="watermark-overlay" style={{ opacity: 0.15 }}>
+                      <span className="watermark-text" style={{ fontSize: '1.2rem' }}>PIXEL VIBE</span>
+                    </div>
+                    <div
+                      className="image-protect"
+                      onContextMenu={(e) => e.preventDefault()}
+                    ></div>
+                  </>
+                )}
+
                 {!item.image_url && (
                   <svg className="p-card-shapes" viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style={{ color: item.color }}>
-                    <polygon points="150,20 260,80 230,200 70,200 40,80" fill="none" stroke="currentColor" strokeWidth="1"/>
-                    <circle cx="150" cy="120" r="40" fill="none" stroke="currentColor" strokeWidth="0.8"/>
-                    <line x1="40" y1="80" x2="260" y2="80" stroke="currentColor" strokeWidth="0.5"/>
-                    <circle cx="150" cy="120" r="8" fill="currentColor" opacity="0.4"/>
+                    <polygon points="150,20 260,80 230,200 70,200 40,80" fill="none" stroke="currentColor" strokeWidth="1" />
+                    <circle cx="150" cy="120" r="40" fill="none" stroke="currentColor" strokeWidth="0.8" />
+                    <line x1="40" y1="80" x2="260" y2="80" stroke="currentColor" strokeWidth="0.5" />
+                    <circle cx="150" cy="120" r="8" fill="currentColor" opacity="0.4" />
                   </svg>
                 )}
                 <div className="p-card-overlay" style={{ background: item.image_url ? 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' : undefined }}></div>
@@ -563,13 +581,13 @@ function Home() {
           </div>
           <div className="services-grid" id="servicesGrid">
             {services.map((s, i) => (
-              <div 
-                key={i} 
-                className="s-card reveal" 
+              <div
+                key={i}
+                className="s-card reveal"
                 ref={addToRefs}
                 style={{ transitionDelay: `${i * 0.08}s` }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor=`${s.color}40`; e.currentTarget.style.boxShadow=`0 24px 60px ${s.color}15`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor='rgba(255,255,255,0.06)'; e.currentTarget.style.boxShadow='none'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${s.color}40`; e.currentTarget.style.boxShadow = `0 24px 60px ${s.color}15`; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
                 <span className="s-icon">{s.icon}</span>
                 <div className="s-title">{s.title}</div>
@@ -603,7 +621,7 @@ function Home() {
           <div className="about-text reveal-right" ref={addToRefs}>
             <span className="sec-tag" style={{ color: 'var(--cyan)', textAlign: 'left', display: 'block' }}>About Me</span>
             <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900, fontSize: 'clamp(1.8rem, 2.5vw, 2.8rem)', color: '#fff', lineHeight: 1.15, marginBottom: '1.5rem' }}>
-              Turning Ideas Into<br/><span className="glow-cyan">Visual Power</span>
+              Turning Ideas Into<br /><span className="glow-cyan">Visual Power</span>
             </h2>
             <p>I'm a passionate graphic designer specializing in gaming and creative design. I create premium visuals that make content stand out — from intense gaming thumbnails that drive clicks to clean brand logos that leave a lasting impression.</p>
             <p>Every pixel is intentional. Every design is crafted with purpose, precision, and a deep understanding of what captures attention in today's visual landscape.</p>
@@ -686,7 +704,7 @@ function Home() {
                   <div className="c-val">hello@pixelvibe.design</div>
                 </div>
               </div>
-              <a href="https://wa.me/94753951531" target="_blank" rel="noreferrer" className="contact-item" style={{textDecoration:'none', transition:'transform 0.3s'}}>
+              <a href="https://wa.me/94753951531" target="_blank" rel="noreferrer" className="contact-item" style={{ textDecoration: 'none', transition: 'transform 0.3s' }}>
                 <div className="c-icon wa-highlight" style={{ background: 'rgba(37,211,102,0.15)', color: '#25d366' }}>
                   <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 448 512" height="22px" width="22px" xmlns="http://www.w3.org/2000/svg"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path></svg>
                 </div>
@@ -714,30 +732,30 @@ function Home() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Your Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="John Doe" 
+                  <input
+                    type="text"
+                    placeholder="John Doe"
                     required
                     value={contactForm.name}
-                    onChange={e => setContactForm({...contactForm, name: e.target.value})}
+                    onChange={e => setContactForm({ ...contactForm, name: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
                   <label>Email Address</label>
-                  <input 
-                    type="email" 
-                    placeholder="john@email.com" 
+                  <input
+                    type="email"
+                    placeholder="john@email.com"
                     required
                     value={contactForm.email}
-                    onChange={e => setContactForm({...contactForm, email: e.target.value})}
+                    onChange={e => setContactForm({ ...contactForm, email: e.target.value })}
                   />
                 </div>
               </div>
               <div className="form-group">
                 <label>Service Needed</label>
-                <select 
+                <select
                   value={contactForm.service}
-                  onChange={e => setContactForm({...contactForm, service: e.target.value})}
+                  onChange={e => setContactForm({ ...contactForm, service: e.target.value })}
                 >
                   <option>Gaming Thumbnail</option>
                   <option>Gaming Logo</option>
@@ -752,7 +770,7 @@ function Home() {
                 <label>Budget Range</label>
                 <select
                   value={contactForm.budget}
-                  onChange={e => setContactForm({...contactForm, budget: e.target.value})}
+                  onChange={e => setContactForm({ ...contactForm, budget: e.target.value })}
                 >
                   <option>Basic</option>
                   <option>Standard</option>
@@ -762,15 +780,15 @@ function Home() {
               </div>
               <div className="form-group">
                 <label>Project Description</label>
-                <textarea 
+                <textarea
                   placeholder="Describe your project, style preferences, references..."
                   value={contactForm.message}
-                  onChange={e => setContactForm({...contactForm, message: e.target.value})}
+                  onChange={e => setContactForm({ ...contactForm, message: e.target.value })}
                 ></textarea>
               </div>
-              <button 
-                type="submit" 
-                className="submit-btn" 
+              <button
+                type="submit"
+                className="submit-btn"
                 disabled={submitting}
               >
                 {submitting ? 'SENDING...' : 'Send Message →'}
@@ -820,51 +838,70 @@ function Home() {
       </footer>
       {/* LIGHTBOX */}
       {selectedItem && (
-        <div 
+        <div
           className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-300"
           onClick={() => setSelectedItem(null)}
         >
-          <button 
-            onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }} 
+          <button
+            onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }}
             className="absolute top-8 left-8 flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white border border-white/10 backdrop-blur-md transition-all group"
           >
             <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
             <span className="text-sm font-['Rajdhani'] font-bold tracking-widest uppercase">Back to Portfolio</span>
           </button>
 
-          <button 
-            onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }} 
+          <button
+            onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }}
             className="absolute top-8 right-8 w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white border border-white/10 backdrop-blur-md transition-all"
           >
             <X size={24} />
           </button>
-          
-          <div 
-            className="relative w-full max-w-5xl max-h-[90vh] flex flex-col items-center animate-in zoom-in-95 duration-500"
+
+          <div
+            className="relative w-full max-w-6xl max-h-[90vh] grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in zoom-in-95 duration-500 overflow-y-auto lg:overflow-visible custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
-            {selectedItem.image_url ? (
-               <img 
-                 src={selectedItem.image_url} 
-                 alt={selectedItem.title} 
-                 className="w-full h-full object-contain rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,0.8)] border border-white/5"
-               />
-            ) : (
-              <div className="w-full aspect-video rounded-3xl flex items-center justify-center relative overflow-hidden" style={{ background: selectedItem.bg || '#0d0d22' }}>
-                <svg className="w-64 h-64 opacity-20" viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style={{ color: selectedItem.color }}>
-                  <polygon points="150,20 260,80 230,200 70,200 40,80" fill="none" stroke="currentColor" strokeWidth="1"/>
-                  <circle cx="150" cy="120" r="40" fill="none" stroke="currentColor" strokeWidth="0.8"/>
-                </svg>
-                <div className="absolute text-5xl font-['Orbitron'] font-black text-white/10">PREVIEW</div>
+            <div className="lg:col-span-8 flex flex-col items-center w-full">
+              {selectedItem.image_url ? (
+                <div className="relative w-full h-full flex items-center justify-center watermark-container">
+                  <img
+                    src={selectedItem.image_url}
+                    alt={selectedItem.title}
+                    className="w-full h-full object-contain rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,0.8)] border border-white/5"
+                  />
+                  {!selectedItem.is_free && (
+                    <>
+                      <div className="watermark-overlay">
+                        <span className="watermark-text">PIXEL VIBE</span>
+                      </div>
+                      <div
+                        className="image-protect"
+                        onContextMenu={(e) => e.preventDefault()}
+                      ></div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="w-full aspect-video rounded-3xl flex items-center justify-center relative overflow-hidden" style={{ background: selectedItem.bg || '#0d0d22' }}>
+                  <svg className="w-64 h-64 opacity-20" viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style={{ color: selectedItem.color }}>
+                    <polygon points="150,20 260,80 230,200 70,200 40,80" fill="none" stroke="currentColor" strokeWidth="1" />
+                    <circle cx="150" cy="120" r="40" fill="none" stroke="currentColor" strokeWidth="0.8" />
+                  </svg>
+                  <div className="absolute text-5xl font-['Orbitron'] font-black text-white/10">PREVIEW</div>
+                </div>
+              )}
+            </div>
+
+            <div className="lg:col-span-4 flex flex-col gap-6 w-full h-full">
+              <div className="text-left space-y-4">
+                <span className="px-4 py-1.5 rounded-full border border-white/10 text-xs font-['Rajdhani'] font-bold tracking-widest uppercase" style={{ color: selectedItem.color }}>
+                  {selectedItem.sub || selectedItem.cat}
+                </span>
+                <h2 className="text-3xl md:text-4xl font-['Orbitron'] font-black text-white leading-tight">{selectedItem.title}</h2>
+                <p className="text-gray-400 font-['Rajdhani'] tracking-wide text-sm">Premium design crafted with precision for high-end gaming and creative brands.</p>
               </div>
-            )}
-            
-            <div className="mt-8 text-center space-y-2">
-              <span className="px-4 py-1.5 rounded-full border border-white/10 text-xs font-['Rajdhani'] font-bold tracking-widest uppercase" style={{ color: selectedItem.color }}>
-                {selectedItem.sub}
-              </span>
-              <h2 className="text-3xl md:text-5xl font-['Orbitron'] font-black text-white">{selectedItem.title}</h2>
-              <p className="text-gray-400 font-['Rajdhani'] tracking-wide max-w-lg">Premium design crafted with precision for high-end gaming and creative brands.</p>
+
+              <ProductComments productId={selectedItem.id} currentUser={user} isAdmin={isAdmin} />
             </div>
           </div>
         </div>
@@ -876,12 +913,12 @@ function Home() {
           <div className="bg-[#0d0d22] border border-white/10 p-8 rounded-3xl w-full max-w-md relative z-[120] text-center shadow-[0_0_60px_rgba(0,0,0,0.5)]" onClick={e => e.stopPropagation()}>
             <h3 className="text-2xl font-['Orbitron'] font-black text-white mb-2">Order <span style={{ color: orderChoice.color }}>{orderChoice.title}</span></h3>
             <p className="text-gray-400 font-['Rajdhani'] mb-6 tracking-wider uppercase text-sm">How would you like to proceed with your order?</p>
-            
+
             {/* Quantity Selector */}
             <div className="flex flex-col items-center mb-8 p-4 bg-white/5 rounded-2xl border border-white/5">
               <span className="text-gray-500 text-[10px] font-bold tracking-[3px] uppercase mb-3">Select Quantity</span>
               <div className="flex items-center gap-6">
-                <button 
+                <button
                   onClick={() => setOrderQty(Math.max(1, orderQty - 1))}
                   className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all text-xl font-bold"
                 >
@@ -891,7 +928,7 @@ function Home() {
                   <span className="text-3xl font-['Orbitron'] font-black text-white">{orderQty}</span>
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">{orderQty > 1 ? 'Units' : 'Unit'}</span>
                 </div>
-                <button 
+                <button
                   onClick={() => setOrderQty(orderQty + 1)}
                   className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all text-xl font-bold"
                 >
@@ -901,7 +938,7 @@ function Home() {
             </div>
 
             <div className="flex flex-col gap-4">
-              <button 
+              <button
                 onClick={() => {
                   setContactForm({ ...contactForm, service: orderChoice.title });
                   setOrderChoice(null);
@@ -911,8 +948,8 @@ function Home() {
               >
                 📧 VIA CONTACT FORM
               </button>
-              
-              <a 
+
+              <a
                 href={`https://wa.me/94753951531?text=${encodeURIComponent(
                   `🔥 *NEW ORDER FROM PIXEL VIBE*\n\n` +
                   `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -922,7 +959,7 @@ function Home() {
                   `━━━━━━━━━━━━━━━━━━━━\n\n` +
                   `Hello! I'm interested in ordering ${orderQty} ${orderChoice.title}. Please let me know the next steps.`
                 )}`}
-                target="_blank" 
+                target="_blank"
                 rel="noreferrer"
                 className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#25d366] to-[#128c7e] text-white font-bold py-4 rounded-2xl font-['Rajdhani'] tracking-widest transition-all no-underline shadow-[0_10px_30px_rgba(37,211,102,0.3)]"
                 onClick={() => { setOrderChoice(null); setOrderQty(1); }}
@@ -931,7 +968,7 @@ function Home() {
                 VIA WHATSAPP
               </a>
             </div>
-            
+
             <button onClick={() => setOrderChoice(null)} className="mt-8 text-gray-500 hover:text-white text-xs font-['Rajdhani'] uppercase tracking-widest font-bold">Cancel</button>
           </div>
         </div>
@@ -939,11 +976,11 @@ function Home() {
 
       {/* SUCCESS MODAL */}
       {showSuccess && (
-        <div 
+        <div
           className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-in fade-in duration-300"
           onClick={() => setShowSuccess(false)}
         >
-          <div 
+          <div
             className="bg-[#0d0d22] border border-cyan/30 p-10 rounded-3xl w-full max-w-sm relative z-[2010] text-center shadow-[0_0_100px_rgba(0,245,212,0.15)] animate-in zoom-in-90 duration-500"
             onClick={e => e.stopPropagation()}
           >
@@ -953,10 +990,10 @@ function Home() {
             </div>
             <h3 className="text-2xl font-['Orbitron'] font-black text-white mb-2 tracking-tight">MESSAGE <span className="text-cyan">SENT!</span></h3>
             <p className="text-gray-400 font-['Rajdhani'] mb-10 tracking-wider uppercase text-xs leading-relaxed">
-              Your inquiry has been received.<br/>I'll get back to you within 24 hours.
+              Your inquiry has been received.<br />I'll get back to you within 24 hours.
             </p>
-            <button 
-              onClick={() => setShowSuccess(false)} 
+            <button
+              onClick={() => setShowSuccess(false)}
               className="w-full bg-gradient-to-r from-cyan to-blue text-black font-black py-4 rounded-xl font-['Rajdhani'] tracking-[3px] uppercase text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-[0_10px_30px_rgba(0,245,212,0.3)] cursor-pointer"
               style={{ cursor: 'pointer' }}
             >
@@ -966,21 +1003,21 @@ function Home() {
         </div>
       )}
 
-          {user && (
-            <ProfileModal 
-              show={showProfile}
-              onClose={() => setShowProfile(false)}
-              user={user}
-              isPro={isPro}
-              userCoins={userCoins}
-              profileName={profileName}
-              setProfileName={setProfileName}
-              onAvatarChange={onAvatarChange}
-              avatarPreview={avatarPreview}
-              updatingProfile={updatingProfile}
-              handleUpdateProfile={handleUpdateProfile}
-            />
-          )}
+      {user && (
+        <ProfileModal
+          show={showProfile}
+          onClose={() => setShowProfile(false)}
+          user={user}
+          isPro={isPro}
+          userCoins={userCoins}
+          profileName={profileName}
+          setProfileName={setProfileName}
+          onAvatarChange={onAvatarChange}
+          avatarPreview={avatarPreview}
+          updatingProfile={updatingProfile}
+          handleUpdateProfile={handleUpdateProfile}
+        />
+      )}
     </>
   );
 }
@@ -988,7 +1025,7 @@ function Home() {
 const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setProfileName, onAvatarChange, avatarPreview, updatingProfile, handleUpdateProfile }) => {
   if (!show) return null;
   const joinedDate = new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  
+
   // Automatically uses your current production or local domain
   const baseUrl = window.location.origin;
   const referralLink = `${baseUrl}/?ref=${user.id}`;
@@ -997,13 +1034,13 @@ const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setP
     navigator.clipboard.writeText(referralLink);
     alert('Referral link copied to clipboard!');
   };
-  
+
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-in fade-in duration-300"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-[#0a0a1f] border border-cyan/20 p-6 md:p-10 rounded-[2.5rem] w-full max-w-sm md:max-w-md relative z-[3010] shadow-[0_0_100px_rgba(0,245,212,0.15)] animate-in zoom-in-95 duration-500 overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
@@ -1016,8 +1053,8 @@ const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setP
             <h3 className="text-xl md:text-2xl font-['Orbitron'] font-black text-white tracking-widest">CREATOR <span className="text-cyan">PROFILE</span></h3>
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[4px]">Verified Workspace</span>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all border border-white/5"
           >
             <X size={20} />
@@ -1042,9 +1079,9 @@ const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setP
                   </div>
                 </div>
               </div>
-              <input 
-                type="file" 
-                accept="image/*" 
+              <input
+                type="file"
+                accept="image/*"
                 onChange={onAvatarChange}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
@@ -1082,7 +1119,7 @@ const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setP
               <div className="flex-1 bg-black/40 p-3 rounded-xl border border-white/5 overflow-hidden text-ellipsis whitespace-nowrap text-[10px] font-mono text-gray-400">
                 {referralLink}
               </div>
-              <button 
+              <button
                 onClick={copyRefLink}
                 className="px-4 bg-cyan/10 hover:bg-cyan/20 text-cyan border border-cyan/30 rounded-xl transition-all font-bold text-[10px]"
               >
@@ -1095,8 +1132,8 @@ const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setP
             <div className="form-group">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[3px] mb-3 block">Display Identity</label>
               <div className="relative">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={profileName}
                   onChange={e => setProfileName(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white font-['Rajdhani'] font-bold tracking-widest focus:outline-none focus:border-cyan/50 focus:bg-white/10 transition-all"
@@ -1107,8 +1144,8 @@ const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setP
           </div>
 
           {/* Solid Submit Button - No Glow */}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={updatingProfile}
             className="w-full relative group transition-transform active:scale-95"
           >
@@ -1121,7 +1158,7 @@ const ProfileModal = ({ show, onClose, user, isPro, userCoins, profileName, setP
           </button>
         </form>
 
-        <button 
+        <button
           onClick={() => { supabase.auth.signOut(); onClose(); }}
           className="w-full mt-8 text-center text-pink/40 hover:text-pink transition-colors font-bold font-['Rajdhani'] tracking-[3px] uppercase text-[9px]"
         >

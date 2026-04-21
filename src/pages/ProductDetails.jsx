@@ -1,8 +1,23 @@
 import { useParams, Link } from 'react-router-dom';
 import { Download, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../supabase/config';
+import ProductComments from '../components/ProductComments';
 
 const ProductDetails = () => {
   const { id } = useParams();
+  const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        supabase.from('profiles').select('status').eq('id', user.id).single()
+          .then(({ data }) => setIsAdmin(data?.status === 'admin'));
+      }
+    });
+  }, []);
 
   // Mock product data - in a real app this would come from Firebase
   const product = {
@@ -24,16 +39,27 @@ const ProductDetails = () => {
           <span>Back to Home</span>
         </Link>
         
-        <div className="glass-panel p-8">
+        <div className="glass-panel p-8 mb-8">
           <h1 className="text-3xl md:text-4xl font-display font-bold text-white text-center mb-10">Product Details Page</h1>
           
           <div className="flex justify-center mb-10">
-            <div className="relative w-full max-w-md aspect-square rounded-2xl overflow-hidden glass-panel p-2 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+            <div className="relative w-full max-w-md aspect-square rounded-2xl overflow-hidden glass-panel p-2 shadow-[0_0_30px_rgba(16,185,129,0.2)] watermark-container">
               <img 
                 src={product.image} 
                 alt={product.title} 
                 className="w-full h-full object-cover rounded-xl border border-gray-800"
               />
+              {!(product.is_free || product.isFree) && (
+                <>
+                  <div className="watermark-overlay">
+                    <span className="watermark-text select-none">PIXEL VIBE</span>
+                  </div>
+                  <div 
+                    className="image-protect" 
+                    onContextMenu={(e) => e.preventDefault()}
+                  ></div>
+                </>
+              )}
               <div className="absolute top-4 left-4 bg-dark-900/80 backdrop-blur-sm border border-gray-700 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider text-primary">
                 {product.type}
               </div>
@@ -72,6 +98,10 @@ const ProductDetails = () => {
             </div>
           </div>
 
+        </div>
+        
+        <div className="mt-12">
+           <ProductComments productId={id || "1"} currentUser={user} isAdmin={isAdmin} />
         </div>
       </div>
     </div>

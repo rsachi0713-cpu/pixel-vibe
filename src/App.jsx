@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Auth from './pages/Auth';
 import PricingProcess from './pages/PricingProcess';
+import Community from './pages/Community';
 import './index.css';
 
 function App() {
@@ -65,6 +66,10 @@ function App() {
         <Route 
           path="/order-plan/:planName" 
           element={session ? <PricingProcess /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/community" 
+          element={session ? <Community /> : <Navigate to="/login" />} 
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
