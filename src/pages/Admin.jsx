@@ -3,7 +3,7 @@ import { supabase } from '../supabase/config';
 import { 
   LayoutDashboard, Image as ImageIcon, Settings, MessageSquare, 
   Tag, CreditCard, Plus, Edit2, Trash2, Search, Bell, Menu, X,
-  Users, RefreshCw
+  Users, RefreshCw, MessageCircle, Reply
 } from 'lucide-react';
 
 export default function Admin() {
@@ -17,16 +17,24 @@ export default function Admin() {
   const [portfolio, setPortfolio] = useState([]);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ views: 0, inquiries: 0, services: 6 });
+  const [stats, setStats] = useState({ views: 0, inquiries: 0, services: 6, comments: 0 });
   
   const [newItem, setNewItem] = useState({ title: '', cat: 'gaming-thumb', color: '#00f5d4', is_free: false });
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [editingComment, setEditingComment] = useState(null);
+  const [isEditCommentModalOpen, setIsEditCommentModalOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
 
   useEffect(() => {
     loadPortfolio();
     fetchUsers();
+    loadComments();
   }, []);
 
   const fetchUsers = async () => {
@@ -88,6 +96,97 @@ export default function Admin() {
     } catch (e) {
       console.error(e);
       setLoading(false);
+    }
+  };
+
+  const loadComments = async () => {
+    setLoadingComments(true);
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          profiles:user_id (full_name, email)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Join fetch failed, trying simple fetch:', error);
+        const { data: simpleData, error: simpleError } = await supabase.from('comments').select('*');
+        if (simpleError) throw simpleError;
+        setComments(simpleData || []);
+      } else {
+        setComments(data || []);
+      }
+      
+      // Update stats based on whatever data we got
+      setStats(prev => ({ ...prev, comments: data?.length || 0 }));
+    } catch (e) {
+      console.error('Error fetching comments:', e);
+      // alert('Comments load error: ' + e.message);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handlePostReply = async () => {
+    if (!replyContent.trim() || !replyingTo) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('comments')
+        .insert({
+          user_id: user.id,
+          content: replyContent,
+          parent_id: replyingTo.id,
+          product_id: replyingTo.product_id || null
+        });
+      
+      if (error) throw error;
+      
+      setReplyContent('');
+      setReplyingTo(null);
+      setIsReplyModalOpen(false);
+      showToast('Admin reply posted!');
+      loadComments();
+    } catch (e) {
+      console.error('Error replying:', e);
+      showToast('Error posting reply');
+    }
+  };
+
+  const handleDeleteComment = async (id) => {
+    if(window.confirm('Are you sure you want to delete this comment?')) {
+      try {
+        const { error } = await supabase.from('comments').delete().eq('id', id);
+        if (error) throw error;
+        setComments(comments.filter(c => c.id !== id));
+        showToast('Comment deleted successfully!');
+      } catch (e) {
+        console.error('Error deleting comment:', e);
+        showToast('Error deleting comment');
+      }
+    }
+  };
+
+  const handleUpdateComment = async () => {
+    if (!editingComment || !editingComment.content) return;
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .update({ content: editingComment.content })
+        .eq('id', editingComment.id);
+      
+      if (error) throw error;
+      
+      setComments(comments.map(c => c.id === editingComment.id ? { ...c, content: editingComment.content } : c));
+      setIsEditCommentModalOpen(false);
+      showToast('Comment updated!');
+    } catch (e) {
+      console.error('Error updating comment:', e);
+      showToast('Error updating comment');
     }
   };
 
@@ -187,6 +286,7 @@ export default function Admin() {
     { id: 'services', icon: Tag, label: 'Services' },
     { id: 'pricing', icon: CreditCard, label: 'Pricing Plans' },
     { id: 'messages', icon: MessageSquare, label: 'Inquiries' },
+    { id: 'comments', icon: MessageCircle, label: 'User Comments' },
     { id: 'users', icon: Users, label: 'User Management' },
   ];
 
@@ -296,6 +396,82 @@ export default function Admin() {
           </div>
         )}
 
+        {/* EDIT COMMENT MODAL */}
+        {isEditCommentModalOpen && editingComment && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-[#0d0d22] border border-[#00f5d4]/30 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-['Orbitron'] font-bold text-white uppercase tracking-widest">Moderate Comment</h3>
+                <button onClick={() => setIsEditCommentModalOpen(false)} className="text-gray-400 hover:text-white">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-['Rajdhani'] uppercase tracking-widest text-[#00f5d4] font-bold mb-2">Comment Content</label>
+                  <textarea 
+                    value={editingComment.content} 
+                    onChange={e => setEditingComment({...editingComment, content: e.target.value})} 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-['Rajdhani'] focus:outline-none focus:border-[#00f5d4] min-h-[150px] resize-none"
+                  />
+                </div>
+                <div className="flex gap-3 mt-4">
+                   <button 
+                    onClick={() => setIsEditCommentModalOpen(false)}
+                    className="flex-1 bg-white/5 text-white font-bold py-3 rounded-xl font-['Rajdhani'] tracking-widest border border-white/10 hover:bg-white/10 transition-colors"
+                  >
+                    CANCEL
+                  </button>
+                  <button 
+                    onClick={handleUpdateComment} 
+                    className="flex-1 bg-gradient-to-r from-[#00f5d4] to-[#4361ee] text-black font-bold py-3 rounded-xl font-['Rajdhani'] tracking-widest hover:scale-[1.02] transition-transform"
+                  >
+                    UPDATE FEEDBACK
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* REPLY MODAL */}
+        {isReplyModalOpen && replyingTo && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-[#0d0d22] border border-cyan/30 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-['Orbitron'] font-bold text-white uppercase tracking-widest">Post Admin Reply</h3>
+                <button onClick={() => setIsReplyModalOpen(false)} className="text-gray-400 hover:text-white">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="mb-4 p-4 bg-white/5 rounded-xl border border-white/5">
+                <span className="text-[10px] text-cyan font-black uppercase tracking-widest block mb-1">Replying to:</span>
+                <p className="text-xs text-gray-400 font-['Rajdhani'] leading-tight line-clamp-2">"{replyingTo.content}"</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <textarea 
+                    value={replyContent} 
+                    onChange={e => setReplyContent(e.target.value)} 
+                    placeholder="Write your official response..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-['Rajdhani'] focus:outline-none focus:border-cyan min-h-[120px] resize-none"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={handlePostReply} 
+                    className="w-full bg-gradient-to-r from-cyan to-blue-600 text-black font-black py-3 rounded-xl font-['Rajdhani'] tracking-wider hover:scale-[1.02] transition-transform uppercase"
+                  >
+                    Send Official Reply
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* TOPBAR */}
         <header className="h-20 bg-[#0a0a1f]/80 backdrop-blur-md border-b border-white/5 px-8 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4">
@@ -340,8 +516,8 @@ export default function Admin() {
                 {[
                   { label: 'Total Views', value: stats.views.toLocaleString(), trend: 'Overall', color: '#00f5d4' },
                   { label: 'Portfolio Items', value: portfolio.length || '0', trend: 'Live', color: '#f72585' },
+                  { label: 'User Feedback', value: stats.comments, trend: 'Buzz', color: '#00bbff' },
                   { label: 'Received Inquiries', value: stats.inquiries, trend: 'New', color: '#7209b7' },
-                  { label: 'Active Services', value: stats.services, trend: 'Ready', color: '#4361ee' }
                 ].map((stat, i) => (
                   <div key={i} className="bg-[#0d0d22] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity" style={{ background: stat.color, transform: 'translate(30%, -30%)' }}></div>
@@ -546,6 +722,108 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+          {/* Comments Tab */}
+          {activeTab === 'comments' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-white font-['Orbitron'] tracking-wider">USER FEEDBACK <span className="text-cyan">MODERATION</span></h2>
+                  <p className="text-sm text-gray-500 mt-1 uppercase font-['Rajdhani'] font-bold tracking-widest">Manage community discussions and design feedback.</p>
+                </div>
+                <button 
+                  onClick={loadComments}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#00f5d4] transition-all border border-[#00f5d4]/20 font-['Rajdhani'] font-bold tracking-widest text-xs"
+                >
+                  <RefreshCw size={16} className={loadingComments ? 'animate-spin' : ''} />
+                  SYNC FEEDS
+                </button>
+              </div>
+
+              <div className="bg-[#0d0d22] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-white/5 border-b border-white/5 text-[10px] text-gray-500 font-black tracking-[3px] uppercase">
+                        <th className="px-6 py-5 font-semibold">CREATOR / USER</th>
+                        <th className="px-6 py-5 font-semibold">FEEDBACK CONTENT</th>
+                        <th className="px-6 py-5 font-semibold">SOURCE</th>
+                        <th className="px-6 py-5 font-semibold">POSTED ON</th>
+                        <th className="px-6 py-5 font-semibold text-right">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {comments.length === 0 && !loadingComments && (
+                        <tr>
+                          <td colSpan="5" className="p-12 text-center text-gray-600 font-['Rajdhani'] uppercase tracking-widest text-sm italic">The community is quiet... for now.</td>
+                        </tr>
+                      )}
+                      {comments.map((c) => (
+                        <tr key={c.id} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="px-6 py-6">
+                            <div className="flex flex-col">
+                              <span className="font-['Rajdhani'] font-black text-[#00f5d4] text-base tracking-wider uppercase leading-none">{c.profiles?.full_name || 'Anonymous'}</span>
+                              <span className="text-[10px] text-gray-600 font-bold mt-1 uppercase tracking-tighter">{c.profiles?.email || 'Guest User'}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-6 max-w-md">
+                            <p className="text-sm text-gray-300 font-['Rajdhani'] font-medium leading-relaxed line-clamp-2 italic">
+                              "{c.content}"
+                            </p>
+                          </td>
+                          <td className="px-6 py-6">
+                            {c.product_id ? (
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-pink font-black uppercase tracking-widest leading-none">Design</span>
+                                <span className="text-xs text-white font-bold font-['Rajdhani'] mt-1 truncate max-w-[120px]">
+                                   {c.portfolio?.title || `Item: ${c.product_id.split('-').map(w => w[0]?.toUpperCase() + w.slice(1)).join(' ')}`}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-cyan font-black uppercase tracking-widest leading-none">Community</span>
+                                <span className="text-xs text-white font-bold font-['Rajdhani'] mt-1">General Post</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-6">
+                            <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">
+                               {new Date(c.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
+                            </span>
+                          </td>
+                          <td className="px-6 py-6">
+                            <div className="flex items-center justify-end gap-2 opacity-10 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => { setReplyingTo(c); setIsReplyModalOpen(true); }} 
+                                className="p-2.5 bg-white/5 hover:bg-cyan/10 rounded-xl text-gray-400 hover:text-cyan transition-all border border-transparent hover:border-cyan/20"
+                                title="Reply to user"
+                              >
+                                <Reply size={16} />
+                              </button>
+                              <button 
+                                onClick={() => { setEditingComment(c); setIsEditCommentModalOpen(true); }} 
+                                className="p-2.5 bg-white/5 hover:bg-[#00f5d4]/10 rounded-xl text-gray-400 hover:text-[#00f5d4] transition-all border border-transparent hover:border-[#00f5d4]/20"
+                                title="Edit comment"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteComment(c.id)} 
+                                className="p-2.5 bg-white/5 hover:bg-red-500/10 rounded-xl text-gray-400 hover:text-red-500 transition-all border border-transparent hover:border-red-500/20"
+                                title="Delete comment"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Under Construction handling for other tabs */}
           {['services', 'pricing'].includes(activeTab) && (
