@@ -515,12 +515,12 @@ function Home() {
             style={filter === 'all' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}}
             onClick={() => setFilter('all')}
           >All</button>
-          <button className={`filter-btn ${filter === 'gaming-thumb' ? 'on' : 'off'}`} style={filter === 'gaming-thumb' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('gaming-thumb')}>Gaming Thumbs</button>
-          <button className={`filter-btn ${filter === 'gaming-logo' ? 'on' : 'off'}`} style={filter === 'gaming-logo' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('gaming-logo')}>Gaming Logos</button>
-          <button className={`filter-btn ${filter === 'gaming-post' ? 'on' : 'off'}`} style={filter === 'gaming-post' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('gaming-post')}>Gaming Posts</button>
-          <button className={`filter-btn ${filter === 'normal-thumb' ? 'on' : 'off'}`} style={filter === 'normal-thumb' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('normal-thumb')}>Normal Thumbs</button>
-          <button className={`filter-btn ${filter === 'normal-logo' ? 'on' : 'off'}`} style={filter === 'normal-logo' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('normal-logo')}>Normal Logos</button>
-          <button className={`filter-btn ${filter === 'normal-post' ? 'on' : 'off'}`} style={filter === 'normal-post' ? { background: 'linear-gradient(135deg, var(--cyan), var(--blue))', color: '#000' } : {}} onClick={() => setFilter('normal-post')}>Normal Posts</button>
+          <button className={`filter-btn off`} onClick={() => navigate('/portfolio/gaming-thumb')}>Gaming Thumbs</button>
+          <button className={`filter-btn off`} onClick={() => navigate('/portfolio/gaming-logo')}>Gaming Logos</button>
+          <button className={`filter-btn off`} onClick={() => navigate('/portfolio/gaming-post')}>Gaming Posts</button>
+          <button className={`filter-btn off`} onClick={() => navigate('/portfolio/normal-thumb')}>Normal Thumbs</button>
+          <button className={`filter-btn off`} onClick={() => navigate('/portfolio/normal-logo')}>Normal Logos</button>
+          <button className={`filter-btn off`} onClick={() => navigate('/portfolio/normal-post')}>Normal Posts</button>
         </div>
 
         <div className="portfolio-grid" id="portfolioGrid">
@@ -701,7 +701,7 @@ function Home() {
                 <div className="c-icon" style={{ background: 'rgba(0,245,212,0.1)', color: 'var(--cyan)' }}>📧</div>
                 <div>
                   <div className="c-label">Email</div>
-                  <div className="c-val">hello@pixelvibe.design</div>
+                  <div className="c-val">pixelvibeeditz@gmail.com</div>
                 </div>
               </div>
               <a href="https://wa.me/94753951531" target="_blank" rel="noreferrer" className="contact-item" style={{ textDecoration: 'none', transition: 'transform 0.3s' }}>
@@ -826,7 +826,7 @@ function Home() {
           </div>
           <div className="footer-col">
             <h4>Contact</h4>
-            <a href="#">hello@pixelvibe.design</a>
+            <a href="mailto:pixelvibeeditz@gmail.com">pixelvibeeditz@gmail.com</a>
             <a href="#">Discord</a>
             <a href="#">Instagram</a>
           </div>

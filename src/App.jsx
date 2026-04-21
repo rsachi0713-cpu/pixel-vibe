@@ -6,6 +6,7 @@ import Admin from './pages/Admin';
 import Auth from './pages/Auth';
 import PricingProcess from './pages/PricingProcess';
 import Community from './pages/Community';
+import CategoryPortfolio from './pages/CategoryPortfolio';
 import './index.css';
 
 function App() {
@@ -70,6 +71,10 @@ function App() {
         <Route 
           path="/community" 
           element={session ? <Community /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/portfolio/:category" 
+          element={session ? <CategoryPortfolio /> : <Navigate to="/login" />} 
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
