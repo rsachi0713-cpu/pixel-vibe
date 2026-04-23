@@ -86,8 +86,13 @@ export default function Auth() {
       <div className="bg-[#0a0a1f]/80 backdrop-blur-xl border border-white/10 p-8 rounded-3xl w-full max-w-md relative z-10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
         
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-['Orbitron'] font-black bg-clip-text text-transparent bg-gradient-to-r from-[#00f5d4] to-[#f72585]">
-            PIXEL VIBE
+          <h1 className="flex flex-col items-center">
+            <span className="text-3xl font-['Orbitron'] font-black bg-clip-text text-transparent bg-gradient-to-r from-[#00f5d4] to-[#f72585] leading-none">
+              PIXEL VIBE
+            </span>
+            <span className="text-xs font-['Rajdhani'] font-bold tracking-[4px] text-[#00f5d4] uppercase mt-2">
+              AvarY EditZ
+            </span>
           </h1>
           <p className="text-gray-400 mt-2 text-sm font-['Rajdhani'] tracking-wider uppercase">
             {isLogin ? 'Welcome back, Creator.' : 'Join the Elite Creators.'}

@@ -382,7 +382,10 @@ function Home() {
       <nav id="navbar" className={scrolled ? 'scrolled' : ''}>
         <div className="logo cursor-pointer flex items-center gap-3" onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
           <img src="/logo.png" alt="Pixel Vibe Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
-          <span className="font-['Orbitron'] font-black text-sm md:text-xl tracking-widest text-white">PIXEL VIBE</span>
+          <div className="flex flex-col">
+            <span className="font-['Orbitron'] font-black text-sm md:text-xl tracking-widest text-white leading-none">PIXEL VIBE</span>
+            <span className="font-['Rajdhani'] font-bold text-[10px] md:text-[13px] tracking-[2px] text-[#00f5d4] uppercase leading-none mt-1">AvarY EditZ</span>
+          </div>
         </div>
         <div className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           <a href="#hero" onClick={() => setMobileMenuOpen(false)}>Home</a>
@@ -401,7 +404,7 @@ function Home() {
             <a href="#contact" className="nav-cta">Hire Me</a>
           </div>
 
-          {user && (
+          {user ? (
             <div
               className="nav-profile cursor-pointer"
               onClick={() => setShowProfile(true)}
@@ -438,6 +441,21 @@ function Home() {
                   >LOGOUT</button>
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => navigate('/login')}
+                className="hidden sm:block text-[10px] font-bold text-white uppercase tracking-[2px] bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl hover:bg-white/10 transition-all font-['Rajdhani']"
+              >
+                LOGIN
+              </button>
+              <button 
+                onClick={() => navigate('/login')}
+                className="text-[10px] font-black text-black uppercase tracking-[2px] bg-cyan px-4 py-2.5 rounded-xl hover:scale-105 transition-all font-['Rajdhani'] shadow-[0_0_15px_rgba(0,245,212,0.3)]"
+              >
+                JOIN NOW
+              </button>
             </div>
           )}
 
@@ -594,7 +612,13 @@ function Home() {
                 <div className="s-desc">{s.desc}</div>
                 <div className="s-footer">
                   <span className="s-price" style={{ color: s.color }}>{s.price}</span>
-                  <button className="s-btn" style={{ background: s.color }} onClick={() => setOrderChoice({ title: s.title, color: s.color })}>Order Now</button>
+                  <button className="s-btn" style={{ background: s.color }} onClick={() => {
+                    if (user) {
+                      setOrderChoice({ title: s.title, color: s.color });
+                    } else {
+                      navigate('/login');
+                    }
+                  }}>Order Now</button>
                 </div>
               </div>
             ))}
@@ -801,8 +825,9 @@ function Home() {
       {/* FOOTER */}
       <footer>
         <div className="footer-inner">
-          <div className="footer-brand">
-            <span className="logo">PIXEL VIBE</span>
+          <div className="footer-brand flex flex-col items-start gap-1">
+            <span className="logo !text-2xl leading-none">PIXEL VIBE</span>
+            <span className="text-[#00f5d4] text-[11px] font-['Rajdhani'] font-bold tracking-[3px] uppercase ml-1">AvarY EditZ</span>
             <p>Premium gaming & creative design studio. Building visuals that dominate the digital space.</p>
             <div className="socials" style={{ marginTop: '1.5rem' }}>
               <a className="social-btn" href="#">𝕏</a>

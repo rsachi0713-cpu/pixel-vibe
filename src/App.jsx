@@ -58,7 +58,7 @@ function App() {
         />
         <Route 
           path="/" 
-          element={session ? <Home /> : <Navigate to="/login" />} 
+          element={<Home />} 
         />
         <Route 
           path="/admin" 
@@ -74,7 +74,7 @@ function App() {
         />
         <Route 
           path="/portfolio/:category" 
-          element={session ? <CategoryPortfolio /> : <Navigate to="/login" />} 
+          element={<CategoryPortfolio />} 
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
