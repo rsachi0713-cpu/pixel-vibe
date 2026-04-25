@@ -156,7 +156,7 @@ export default function CategoryPortfolio() {
                   />
                   {!selectedItem.is_free && (
                     <div className="watermark-overlay">
-                      <span className="watermark-text">PIXEL VIBE</span>
+                      <span className="watermark-text">AVARY EDITZ</span>
                     </div>
                   )}
                 </div>

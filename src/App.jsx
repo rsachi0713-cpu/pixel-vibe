@@ -18,7 +18,7 @@ function App() {
   const urlParams = new URLSearchParams(window.location.search);
   const refCode = urlParams.get('ref');
   if (refCode) {
-    localStorage.setItem('pixel_vibe_ref', refCode);
+    localStorage.setItem('avary_editz_ref', refCode);
     console.log('Referral code captured officially:', refCode);
   }
 

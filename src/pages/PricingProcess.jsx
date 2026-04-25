@@ -67,7 +67,7 @@ const PricingProcess = () => {
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `${title.replace(/\s+/g, '-').toLowerCase()}-pixelvibe.png`;
+      link.download = `${title.replace(/\s+/g, '-').toLowerCase()}-avaryeditz.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

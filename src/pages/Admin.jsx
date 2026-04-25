@@ -311,9 +311,8 @@ export default function Admin() {
           >
             <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain mb-3 group-hover:scale-110 transition-transform" />
             <div className="font-['Orbitron'] font-black text-xl tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-[#00f5d4] to-[#f72585] leading-none">
-              PIXEL VIBE
+              AVARY EDITZ
             </div>
-            <span className="text-[#00f5d4] text-[11px] font-['Rajdhani'] font-bold tracking-[3px] uppercase mt-1">AvarY EditZ</span>
             <span className="text-white text-[10px] tracking-widest uppercase font-sans opacity-50 mt-2">ADMIN AREA</span>
           </div>
           

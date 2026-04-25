@@ -63,7 +63,7 @@ function Home() {
           .eq('id', u.id)
           .single();
 
-        const referrerId = localStorage.getItem('pixel_vibe_ref');
+        const referrerId = localStorage.getItem('avary_editz_ref');
 
         if (!profile) {
           // NEW USER REGISTRATION
@@ -91,7 +91,7 @@ function Home() {
             });
 
             if (rpcError) console.error("RPC Error:", rpcError);
-            localStorage.removeItem('pixel_vibe_ref'); // Clear after successful reward
+            localStorage.removeItem('avary_editz_ref'); // Clear after successful reward
           }
 
           setUserStatus('free');
@@ -115,7 +115,7 @@ function Home() {
                 amount: 2
               });
               console.log("Referrer rewarded via existing profile sync");
-              localStorage.removeItem('pixel_vibe_ref');
+              localStorage.removeItem('avary_editz_ref');
             }
           }
 
@@ -381,10 +381,9 @@ function Home() {
       {/* NAV */}
       <nav id="navbar" className={scrolled ? 'scrolled' : ''}>
         <div className="logo cursor-pointer flex items-center gap-3" onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-          <img src="/logo.png" alt="Pixel Vibe Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
+          <img src="/logo.png" alt="Avary Editz Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
           <div className="flex flex-col">
-            <span className="font-['Orbitron'] font-black text-sm md:text-xl tracking-widest text-white leading-none">PIXEL VIBE</span>
-            <span className="font-['Rajdhani'] font-bold text-[10px] md:text-[13px] tracking-[2px] text-[#00f5d4] uppercase leading-none mt-1">AvarY EditZ</span>
+            <span className="font-['Orbitron'] font-black text-sm md:text-xl tracking-widest text-white leading-none">AVARY EDITZ</span>
           </div>
         </div>
         <div className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
@@ -561,7 +560,7 @@ function Home() {
                 {!item.is_free && (
                   <>
                     <div className="watermark-overlay" style={{ opacity: 0.15 }}>
-                      <span className="watermark-text" style={{ fontSize: '1.2rem' }}>PIXEL VIBE</span>
+                      <span className="watermark-text" style={{ fontSize: '1.2rem' }}>AVARY EDITZ</span>
                     </div>
                     <div
                       className="image-protect"
@@ -631,7 +630,7 @@ function Home() {
         <div className="about-inner">
           <div className="about-visual reveal-left" ref={addToRefs}>
             <div className="about-img-frame overflow-hidden">
-              <img src="/me.jpg" alt="Pixel Vibe Creator" className="w-full h-full object-cover" />
+              <img src="/me.jpg" alt="Avary Editz Creator" className="w-full h-full object-cover" />
             </div>
             <div className="about-glow-badge">
               <div className="badge-role">Graphic Designer</div>
@@ -725,7 +724,7 @@ function Home() {
                 <div className="c-icon" style={{ background: 'rgba(0,245,212,0.1)', color: 'var(--cyan)' }}>📧</div>
                 <div>
                   <div className="c-label">Email</div>
-                  <div className="c-val">pixelvibeeditz@gmail.com</div>
+                  <div className="c-val">avaryeditz@gmail.com</div>
                 </div>
               </div>
               <a href="https://wa.me/94753951531" target="_blank" rel="noreferrer" className="contact-item" style={{ textDecoration: 'none', transition: 'transform 0.3s' }}>
@@ -826,8 +825,7 @@ function Home() {
       <footer>
         <div className="footer-inner">
           <div className="footer-brand flex flex-col items-start gap-1">
-            <span className="logo !text-2xl leading-none">PIXEL VIBE</span>
-            <span className="text-[#00f5d4] text-[11px] font-['Rajdhani'] font-bold tracking-[3px] uppercase ml-1">AvarY EditZ</span>
+            <span className="logo !text-2xl leading-none">AVARY EDITZ</span>
             <p>Premium gaming & creative design studio. Building visuals that dominate the digital space.</p>
             <div className="socials" style={{ marginTop: '1.5rem' }}>
               <a className="social-btn" href="#">𝕏</a>
@@ -851,14 +849,14 @@ function Home() {
           </div>
           <div className="footer-col">
             <h4>Contact</h4>
-            <a href="mailto:pixelvibeeditz@gmail.com">pixelvibeeditz@gmail.com</a>
+            <a href="mailto:avaryeditz@gmail.com">avaryeditz@gmail.com</a>
             <a href="#">Discord</a>
             <a href="#">Instagram</a>
           </div>
         </div>
         <div className="footer-bottom">
-          <p>© 2025 Pixel Vibe. All rights reserved.</p>
-          <p style={{ color: 'rgba(255,255,255,0.15)' }}>Designed with ⚡ by Pixel Vibe</p>
+          <p>© 2025 Avary Editz. All rights reserved.</p>
+          <p style={{ color: 'rgba(255,255,255,0.15)' }}>Designed with ⚡ by Avary Editz</p>
         </div>
       </footer>
       {/* LIGHTBOX */}
@@ -897,7 +895,7 @@ function Home() {
                   {!selectedItem.is_free && (
                     <>
                       <div className="watermark-overlay">
-                        <span className="watermark-text">PIXEL VIBE</span>
+                        <span className="watermark-text">AVARY EDITZ</span>
                       </div>
                       <div
                         className="image-protect"
@@ -976,7 +974,7 @@ function Home() {
 
               <a
                 href={`https://wa.me/94753951531?text=${encodeURIComponent(
-                  `🔥 *NEW ORDER FROM PIXEL VIBE*\n\n` +
+                  `🔥 *NEW ORDER FROM AVARY EDITZ*\n\n` +
                   `━━━━━━━━━━━━━━━━━━━━\n` +
                   `📌 *Category:* ${orderChoice.title}\n` +
                   `📦 *Quantity:* ${orderQty} ${orderQty > 1 ? 'Designs' : 'Design'}\n` +

@@ -88,10 +88,7 @@ export default function Auth() {
         <div className="text-center mb-8">
           <h1 className="flex flex-col items-center">
             <span className="text-3xl font-['Orbitron'] font-black bg-clip-text text-transparent bg-gradient-to-r from-[#00f5d4] to-[#f72585] leading-none">
-              PIXEL VIBE
-            </span>
-            <span className="text-xs font-['Rajdhani'] font-bold tracking-[4px] text-[#00f5d4] uppercase mt-2">
-              AvarY EditZ
+              AVARY EDITZ
             </span>
           </h1>
           <p className="text-gray-400 mt-2 text-sm font-['Rajdhani'] tracking-wider uppercase">
@@ -138,7 +135,7 @@ export default function Auth() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00f5d4] transition-colors"
-              placeholder="pixelvibeeditz@gmail.com"
+              placeholder="avaryeditz@gmail.com"
             />
           </div>
 

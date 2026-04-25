@@ -52,7 +52,7 @@ const ProductDetails = () => {
               {!(product.is_free || product.isFree) && (
                 <>
                   <div className="watermark-overlay">
-                    <span className="watermark-text select-none">PIXEL VIBE</span>
+                    <span className="watermark-text select-none">AVARY EDITZ</span>
                   </div>
                   <div 
                     className="image-protect" 
