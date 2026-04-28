@@ -1,11 +1,12 @@
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Check, Zap, Shield, Rocket, Download, Eye, X } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Check, Zap, Shield, Rocket, Download, Eye, X, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase/config';
 import ProductComments from '../components/ProductComments';
 
 const PricingProcess = () => {
   const { planName } = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [activeCat, setActiveCat] = useState('all');
@@ -206,6 +207,85 @@ const PricingProcess = () => {
               <p className="text-gray-500 font-['Rajdhani'] uppercase tracking-widest text-sm">Check back later or contact us for custom designs.</p>
             </div>
           )}
+
+          {/* COMMUNITY FEEDBACK BANNER */}
+          <div style={{
+            marginTop: '3.5rem',
+            borderRadius: '1.5rem',
+            background: 'linear-gradient(135deg, rgba(0,245,212,0.06) 0%, rgba(114,9,183,0.08) 50%, rgba(247,37,133,0.06) 100%)',
+            border: '1px solid rgba(0,245,212,0.18)',
+            padding: '2rem 2.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+            alignItems: 'center',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            {/* glow orb */}
+            <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '300px', height: '200px', background: 'radial-gradient(ellipse, rgba(0,245,212,0.12) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
+
+            {/* emoji + label row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
+              <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>💬</span>
+              <span style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900, fontSize: '0.7rem', letterSpacing: '4px', textTransform: 'uppercase', color: '#00f5d4' }}>Community Feedback</span>
+            </div>
+
+            {/* Sinhala message */}
+            <p style={{
+              fontFamily: "'Rajdhani', sans-serif",
+              fontSize: 'clamp(1rem, 2.2vw, 1.25rem)',
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.88)',
+              lineHeight: 1.7,
+              maxWidth: '640px',
+              position: 'relative',
+            }}>
+              ඔයාලට තව&nbsp;
+              <span style={{ color: '#00f5d4', fontWeight: 900 }}>මොනවගේ Thumbnails</span>
+              &nbsp;ද ඔනෙ කරන්නේ කියලා&nbsp;
+              <span style={{ color: '#f72585', fontWeight: 900 }}>Comment</span>
+              &nbsp;එකක් දාගෙන යන්න 🔥
+            </p>
+
+            {/* Divider */}
+            <div style={{ width: '60px', height: '2px', background: 'linear-gradient(90deg, #00f5d4, #f72585)', borderRadius: '99px' }}></div>
+
+            {/* COMMENT button */}
+            <button
+              onClick={() => navigate('/community')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                background: 'linear-gradient(135deg, #00f5d4, #4361ee)',
+                color: '#000',
+                fontFamily: "'Orbitron', sans-serif",
+                fontWeight: 900,
+                fontSize: '0.78rem',
+                letterSpacing: '4px',
+                textTransform: 'uppercase',
+                border: 'none',
+                borderRadius: '999px',
+                padding: '14px 36px',
+                cursor: 'pointer',
+                boxShadow: '0 0 30px rgba(0,245,212,0.3), 0 10px 30px rgba(0,0,0,0.4)',
+                transition: 'all 0.3s',
+                position: 'relative',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = '0 0 50px rgba(0,245,212,0.5), 0 16px 40px rgba(0,0,0,0.4)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(0,245,212,0.3), 0 10px 30px rgba(0,0,0,0.4)'; }}
+            >
+              <MessageSquare size={16} />
+              COMMENT
+            </button>
+
+            <p style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '2px', textTransform: 'uppercase', position: 'relative' }}>
+              ✦ Community Feedback Page ෙකට යොමු වෙනවා ✦
+            </p>
+          </div>
+
         </div>
 
         {/* LIGHTBOX FOR FREE SAMPLES */}

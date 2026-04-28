@@ -23,6 +23,7 @@ function Home() {
   const navigate = useNavigate();
 
   const [portfolioItems, setPortfolioItems] = useState([]);
+  const [freeItems, setFreeItems] = useState([]);
   const [loadingPortfolio, setLoadingPortfolio] = useState(true);
   const [rotationOffset, setRotationOffset] = useState(0);
   const [user, setUser] = useState(null);
@@ -139,6 +140,7 @@ function Home() {
         const { data, error } = await supabase.from('portfolio').select('*');
         if (error) throw error;
         setPortfolioItems(data || []);
+        setFreeItems((data || []).filter(i => i.is_free));
       } catch (e) {
         console.error('Error fetching portfolio:', e);
       } finally {
@@ -489,6 +491,30 @@ function Home() {
             <div className="hero-btns">
               <button className="btn-primary" onClick={() => document.getElementById('portfolio').scrollIntoView({ behavior: 'smooth' })}>View My Work →</button>
               <button className="btn-ghost" onClick={() => document.getElementById('contact').scrollIntoView({ behavior: 'smooth' })}>Hire Me</button>
+               <button
+                onClick={() => document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' })}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '7px',
+                  background: 'transparent',
+                  color: '#00f5d4',
+                  padding: '13px 24px',
+                  borderRadius: '8px',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 800,
+                  fontSize: '0.88rem',
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase',
+                  border: '1.5px solid rgba(0,245,212,0.5)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  boxShadow: '0 0 18px rgba(0,245,212,0.15)',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,245,212,0.08)'; e.currentTarget.style.borderColor = '#00f5d4'; e.currentTarget.style.boxShadow = '0 0 30px rgba(0,245,212,0.35)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(0,245,212,0.5)'; e.currentTarget.style.boxShadow = '0 0 18px rgba(0,245,212,0.15)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >
+                🎁 Free Thumbnails
+              </button>
             </div>
           </div>
           <div className="hero-right">
@@ -674,11 +700,69 @@ function Home() {
             <div className="sec-title">Transparent <span className="glow-pink">Pricing</span></div>
           </div>
           <div className="pricing-grid reveal" ref={addToRefs}>
-            <div className="pr-card">
+            <div className="pr-card" style={{ overflow: 'hidden' }}>
               <div className="pr-price">FREE</div>
-              <div className="pr-period">Limited availability</div>
-              <ul className="pr-features">
-                {/* No features as requested */}
+              <div className="pr-period" style={{ marginBottom: '0.5rem' }}>Limited availability</div>
+
+              {/* FREE THUMBNAILS label */}
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: 'rgba(0,245,212,0.08)', border: '1px solid rgba(0,245,212,0.25)',
+                borderRadius: '999px', padding: '4px 12px', marginBottom: '12px'
+              }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#00f5d4', display: 'inline-block', animation: 'pulse-dot 1.5s infinite' }}></span>
+                <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 800, fontSize: '0.65rem', letterSpacing: '3px', color: '#00f5d4', textTransform: 'uppercase' }}>FREE THUMBNAILS</span>
+                {freeItems.length > 0 && (
+                  <span style={{ background: '#00f5d4', color: '#000', borderRadius: '99px', padding: '1px 7px', fontSize: '0.6rem', fontWeight: 900, fontFamily: "'Orbitron',sans-serif" }}>{freeItems.length}</span>
+                )}
+              </div>
+
+              {/* Scrolling thumbnail strip */}
+              {freeItems.length > 0 ? (
+                <div style={{ overflow: 'hidden', borderRadius: '12px', marginBottom: '16px', position: 'relative' }}>
+                  <div style={{
+                    display: 'flex', gap: '8px',
+                    animation: 'freeStrip 18s linear infinite',
+                    width: 'max-content'
+                  }}>
+                    {[...freeItems, ...freeItems].map((item, idx) => (
+                      <div key={idx} style={{
+                        width: '90px', height: '58px', borderRadius: '8px', overflow: 'hidden',
+                        flexShrink: 0, border: '1px solid rgba(0,245,212,0.2)',
+                        cursor: 'pointer', transition: 'transform 0.2s'
+                      }}
+                        onClick={() => navigate('/order-plan/free')}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.06)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        <img src={item.image_url} alt={item.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          draggable={false}
+                          onContextMenu={e => e.preventDefault()}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {/* fade edges */}
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '28px', height: '100%', background: 'linear-gradient(to right, var(--card-bg,#0a0a1f), transparent)', pointerEvents: 'none' }}></div>
+                  <div style={{ position: 'absolute', top: 0, right: 0, width: '28px', height: '100%', background: 'linear-gradient(to left, var(--card-bg,#0a0a1f), transparent)', pointerEvents: 'none' }}></div>
+                </div>
+              ) : (
+                <div style={{
+                  height: '58px', borderRadius: '12px', marginBottom: '16px',
+                  background: 'rgba(0,245,212,0.04)', border: '1px dashed rgba(0,245,212,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Rajdhani',sans-serif", fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)',
+                  letterSpacing: '2px', textTransform: 'uppercase'
+                }}>Coming Soon</div>
+              )}
+
+              <ul className="pr-features" style={{ marginBottom: '0.5rem' }}>
+                {freeItems.length > 0 && (
+                  <li className="yes" style={{ fontSize: '0.78rem' }}>{freeItems.length} Free High-Quality Design{freeItems.length > 1 ? 's' : ''}</li>
+                )}
+                <li className="yes" style={{ fontSize: '0.78rem' }}>Instant Download</li>
+                <li className="yes" style={{ fontSize: '0.78rem' }}>No Sign-Up Required</li>
               </ul>
               <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate('/order-plan/free')}>Get Started</button>
             </div>

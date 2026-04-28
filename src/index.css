@@ -420,6 +420,11 @@ section {
 .pr-features li.no { opacity: 0.35; text-decoration: line-through; }
 .pr-features li.no::before { color: rgba(255,255,255,0.2); }
 
+@keyframes freeStrip {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* ===== CONTACT ===== */
 #contact { padding: 120px 3rem; background: linear-gradient(180deg, var(--dark2), var(--dark)); }
 .contact-inner { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 4rem; align-items: start; }
