@@ -62,15 +62,15 @@ function App() {
         />
         <Route 
           path="/admin" 
-          element={session ? <Admin /> : <Navigate to="/login" />} 
+          element={<Admin />} 
         />
         <Route 
           path="/order-plan/:planName" 
-          element={session ? <PricingProcess /> : <Navigate to="/login" />} 
+          element={<PricingProcess />} 
         />
         <Route 
           path="/community" 
-          element={session ? <Community /> : <Navigate to="/login" />} 
+          element={<Community />} 
         />
         <Route 
           path="/portfolio/:category" 

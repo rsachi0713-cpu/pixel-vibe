@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Zap, Shield, Rocket, Download, Eye, X, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Check, Zap, Shield, Rocket, Download, Eye, X, MessageSquare, Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase/config';
 import ProductComments from '../components/ProductComments';
@@ -10,18 +10,17 @@ const PricingProcess = () => {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [activeCat, setActiveCat] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const categories = [
-    { id: 'all', label: 'All Designs' },
-    { id: 'gaming-thumb', label: 'Gaming Thumbs' },
-    { id: 'gaming-logo', label: 'Gaming Logos' },
-    { id: 'gaming-post', label: 'Gaming Posts' },
-    { id: 'normal-thumb', label: 'Normal Thumbs' },
-    { id: 'normal-logo', label: 'Normal Logos' },
-    { id: 'normal-post', label: 'Normal Posts' },
+    { id: 'all', label: 'All Text' },
+    { id: '3d-text', label: '3D Text' },
+    { id: 'sinhala-text', label: 'Sinhala Text' },
+    { id: 'english-text', label: 'English Text' },
+    { id: 'numbers', label: 'Numbers' },
   ];
 
   useEffect(() => {
@@ -57,9 +56,11 @@ const PricingProcess = () => {
     }
   };
 
-  const filteredItems = activeCat === 'all' 
-    ? items 
-    : items.filter(item => item.cat === activeCat);
+  const filteredItems = items.filter(item => {
+    const matchesCat = activeCat === 'all' || item.cat === activeCat;
+    const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
 
   const handleDownload = async (url, title) => {
     try {
@@ -129,27 +130,44 @@ const PricingProcess = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
             <div>
               <h1 className="text-5xl md:text-7xl font-['Orbitron'] font-black mb-4 uppercase tracking-tighter">
-                FREE <span className="text-[#00f5d4]">DESIGNS</span>
+                3D <span className="text-[#00f5d4]">TEXT</span>
               </h1>
               <p className="text-gray-400 font-['Rajdhani'] text-lg tracking-wide max-w-xl">
                 Download high-quality assets for your personal projects. Mark as credit when using in public.
               </p>
             </div>
             
-            <div className="flex flex-wrap gap-2">
-              {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCat(cat.id)}
-                  className={`px-4 py-2 rounded-lg font-['Rajdhani'] font-bold text-xs uppercase tracking-widest transition-all border ${
-                    activeCat === cat.id 
-                    ? 'bg-[#00f5d4] border-[#00f5d4] text-black shadow-[0_0_20px_rgba(0,245,212,0.3)]' 
-                    : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/30'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
+            <div className="flex flex-col gap-4 items-start md:items-end w-full md:w-auto">
+              {/* Search Bar */}
+              <div className="relative w-full md:w-64 lg:w-80">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search size={16} className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="SEARCH DESIGNS..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-[#00f5d4] transition-all font-['Rajdhani'] font-bold tracking-widest placeholder-gray-500"
+                />
+              </div>
+
+              {/* Categories */}
+              <div className="flex flex-wrap gap-2 justify-start md:justify-end">
+                {categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCat(cat.id)}
+                    className={`px-4 py-2 rounded-lg font-['Rajdhani'] font-bold text-xs uppercase tracking-widest transition-all border ${
+                      activeCat === cat.id 
+                      ? 'bg-[#00f5d4] border-[#00f5d4] text-black shadow-[0_0_20px_rgba(0,245,212,0.3)]' 
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/30'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

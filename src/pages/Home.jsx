@@ -139,8 +139,10 @@ function Home() {
       try {
         const { data, error } = await supabase.from('portfolio').select('*');
         if (error) throw error;
-        setPortfolioItems(data || []);
-        setFreeItems((data || []).filter(i => i.is_free));
+        const textCategories = ['3d-text', 'sinhala-text', 'english-text', 'numbers'];
+        const nonTextData = (data || []).filter(i => !textCategories.includes(i.cat));
+        setPortfolioItems(nonTextData);
+        setFreeItems(nonTextData.filter(i => i.is_free));
       } catch (e) {
         console.error('Error fetching portfolio:', e);
       } finally {
@@ -443,22 +445,7 @@ function Home() {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => navigate('/login')}
-                className="hidden sm:block text-[10px] font-bold text-white uppercase tracking-[2px] bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl hover:bg-white/10 transition-all font-['Rajdhani']"
-              >
-                LOGIN
-              </button>
-              <button 
-                onClick={() => navigate('/login')}
-                className="text-[10px] font-black text-black uppercase tracking-[2px] bg-cyan px-4 py-2.5 rounded-xl hover:scale-105 transition-all font-['Rajdhani'] shadow-[0_0_15px_rgba(0,245,212,0.3)]"
-              >
-                JOIN NOW
-              </button>
-            </div>
-          )}
+          ) : null}
 
           <button
             className="mobile-nav-toggle"
@@ -638,11 +625,7 @@ function Home() {
                 <div className="s-footer">
                   <span className="s-price" style={{ color: s.color }}>{s.price}</span>
                   <button className="s-btn" style={{ background: s.color }} onClick={() => {
-                    if (user) {
-                      setOrderChoice({ title: s.title, color: s.color });
-                    } else {
-                      navigate('/login');
-                    }
+                    setOrderChoice({ title: s.title, color: s.color });
                   }}>Order Now</button>
                 </div>
               </div>

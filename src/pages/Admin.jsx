@@ -19,7 +19,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ views: 0, inquiries: 0, services: 6, comments: 0 });
   
-  const [newItem, setNewItem] = useState({ title: '', cat: 'gaming-thumb', color: '#00f5d4', is_free: false });
+  const [newItem, setNewItem] = useState({ title: '', cat: 'sinhala-text', color: '#00f5d4', is_free: false });
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -283,6 +283,7 @@ export default function Admin() {
   const tabs = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'portfolio', icon: ImageIcon, label: 'Portfolio Items' },
+    { id: '3d-texts', icon: Tag, label: '3D Text' },
     { id: 'services', icon: Tag, label: 'Services' },
     { id: 'pricing', icon: CreditCard, label: 'Pricing Plans' },
     { id: 'messages', icon: MessageSquare, label: 'Inquiries' },
@@ -358,12 +359,10 @@ export default function Admin() {
                 <div>
                   <label className="block text-xs font-['Rajdhani'] uppercase tracking-widest text-gray-400 mb-1">Category</label>
                   <select value={newItem.cat} onChange={e=>setNewItem({...newItem, cat: e.target.value})} className="w-full bg-[#0a0a1f] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#00f5d4]">
-                    <option value="gaming-thumb">Gaming Thumbnails</option>
-                    <option value="gaming-logo">Gaming Logos</option>
-                    <option value="gaming-post">Gaming Social Posts</option>
-                    <option value="normal-thumb">Normal Thumbnails</option>
-                    <option value="normal-logo">Normal Logos</option>
-                    <option value="normal-post">Normal Social Posts</option>
+                    <option value="3d-text">3D Text</option>
+                    <option value="sinhala-text">Sinhala Text</option>
+                    <option value="english-text">English Text</option>
+                    <option value="numbers">Numbers</option>
                   </select>
                 </div>
                 <div>
@@ -532,15 +531,18 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Portfolio Tab */}
-          {activeTab === 'portfolio' && (
+          {/* Portfolio Tab */ }
+          {(activeTab === 'portfolio' || activeTab === '3d-texts') && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-white font-['Orbitron'] tracking-wider">Portfolio Manager</h2>
-                  <p className="text-sm text-gray-500 mt-1">Add, edit, or delete your design showcase items.</p>
+                  <h2 className="text-2xl font-bold text-white font-['Orbitron'] tracking-wider">{activeTab === '3d-texts' ? '3D Text Manager' : 'Portfolio Manager'}</h2>
+                  <p className="text-sm text-gray-500 mt-1">Add, edit, or delete your {activeTab === '3d-texts' ? '3D text' : 'design showcase'} items.</p>
                 </div>
-                <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-gradient-to-r from-[#00f5d4] to-[#4361ee] text-black px-6 py-2.5 rounded-xl font-bold font-['Rajdhani'] tracking-widest text-sm hover:scale-105 transition-transform shadow-[0_4px_20px_rgba(0,245,212,0.3)]">
+                <button onClick={() => {
+                  setNewItem({ title: '', cat: activeTab === '3d-texts' ? '3d-text' : 'sinhala-text', color: '#00f5d4', is_free: false });
+                  setIsAddModalOpen(true);
+                }} className="flex items-center gap-2 bg-gradient-to-r from-[#00f5d4] to-[#4361ee] text-black px-6 py-2.5 rounded-xl font-bold font-['Rajdhani'] tracking-widest text-sm hover:scale-105 transition-transform shadow-[0_4px_20px_rgba(0,245,212,0.3)]">
                   <Plus size={16} /> ADD NEW ITEM
                 </button>
               </div>
@@ -559,12 +561,20 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody>
-                      {portfolio.length === 0 && (
+                      {portfolio.filter(item => {
+                        const textCategories = ['3d-text', 'sinhala-text', 'english-text', 'numbers'];
+                        if (activeTab === '3d-texts') return textCategories.includes(item.cat);
+                        return !textCategories.includes(item.cat);
+                      }).length === 0 && (
                         <tr>
                           <td colSpan="5" className="p-8 text-center text-gray-500">No items found in Supabase Database.</td>
                         </tr>
                       )}
-                      {portfolio.map((item) => (
+                      {portfolio.filter(item => {
+                        const textCategories = ['3d-text', 'sinhala-text', 'english-text', 'numbers'];
+                        if (activeTab === '3d-texts') return textCategories.includes(item.cat);
+                        return !textCategories.includes(item.cat);
+                      }).map((item) => (
                         <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
